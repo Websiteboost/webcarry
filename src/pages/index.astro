@@ -1,16 +1,139 @@
 ---
+import MainLayout from '../layouts/MainLayout.astro';
+import Footer from '../components/astro/Footer.astro';
+import CategoryBadges from '../components/astro/CategoryBadges.astro';
+import GameCards from '../components/react/GameCards';
+import GlitchLogo from '../components/astro/GlitchLogo.astro';
+import { getSiteContent } from '../utils/content-parser';
+import * as LucideIcons from 'lucide-react';
 
+const siteContent = await getSiteContent();
+const { home, games } = siteContent;
+
+// Mapear los iconos de Lucide
+const iconComponents: Record<string, any> = {};
+for (const feature of home.features.items) {
+  const iconName = feature.icon as keyof typeof LucideIcons;
+  if (LucideIcons[iconName]) {
+    iconComponents[feature.icon] = LucideIcons[iconName];
+  }
+}
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<MainLayout title="WebCarry - Gaming Services">
+  <div class="w-full max-w-full overflow-x-hidden min-h-screen flex flex-col relative">
+    <!-- Logo: fixed top-left con backdrop blur al hacer scroll -->
+    <div id="home-logo-container" class="fixed top-0 left-0 right-0 z-50 transition-all duration-700 ease-out">
+      <div class="p-6">
+        <GlitchLogo />
+      </div>
+    </div>
+    
+    <main class="flex-1 py-4 flex flex-col items-center">
+      <!-- Header Section -->
+      <div id="home-header" class="text-center px-6 w-full flex flex-col items-center mb-2 mt-24 sm:mt-20">
+        <h1 class="text-4xl sm:text-2xl md:text-2xl lg:text-5xl font-bold w-full mb-6">
+          <span class="neon-text ml-3">{home.title.split(' ').slice(1).join(' ')}</span>
+        </h1>
+        <p class="text-base sm:text-lg md:text-xl text-blue-neon leading-relaxed text-center w-full">
+          {home.subtitle}
+        </p>
+      </div>
+
+      <!-- Category Badges -->
+      {home.categories && home.categories.length > 0 && (
+        <div class="px-6 w-full mb-12">
+          <CategoryBadges categories={home.categories} />
+        </div>
+      )}
+
+      <!-- Game Cards (React Component with loading) -->
+      <div class="px-6 flex justify-center w-full mb-8">
+        <div class="w-full max-w-7xl">
+          <GameCards client:load initialGames={games} />
+        </div>
+      </div>
+
+      <!-- Features Section -->
+      <div class="px-6 w-full mb-16 flex justify-center">
+        <div class="w-full max-w-7xl">
+          <!-- Section Header -->
+          <div class="text-center mb-12">
+            <h2 class="text-3xl sm:text-4xl font-bold text-pink-neon neon-text mb-4">
+              {home.features.sectionTitle}
+            </h2>
+            <p class="text-base sm:text-lg text-cyber-white/80 max-w-2xl mx-auto">
+              {home.features.sectionDescription}
+            </p>
+          </div>
+
+          <!-- Features Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
+            {home.features.items.map((feature) => {
+              const IconComponent = iconComponents[feature.icon];
+              return (
+                <div class="glass-effect rounded-md p-6 border border-purple-neon/20 hover:border-pink-neon/50 transition-all duration-300 group">
+                  {/* Icon Container */}
+                  <div class="flex justify-center mb-4">
+                    <div class="p-4 rounded-full bg-purple-neon/10 border-2 border-purple-neon/30 group-hover:border-pink-neon/50 group-hover:bg-pink-neon/10 transition-all duration-300">
+                      {IconComponent && (
+                        <IconComponent 
+                          className="w-8 h-8 text-purple-neon group-hover:text-pink-neon transition-colors duration-300" 
+                          strokeWidth={2}
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Content */}
+                  <h3 class="text-xl font-bold text-cyber-white text-center mb-3 group-hover:text-pink-neon transition-colors">
+                    {feature.title}
+                  </h3>
+                  <p class="text-sm text-cyber-white/70 text-center leading-relaxed">
+                    {feature.description}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <Footer />
+  </div>
+</MainLayout>
+
+<script>
+  // Script optimizado para agregar backdrop blur al logo cuando el título sale de vista
+  document.addEventListener('DOMContentLoaded', () => {
+    const logoContainer = document.getElementById('home-logo-container');
+    const header = document.getElementById('home-header');
+    
+    if (logoContainer && header) {
+      // Usar IntersectionObserver para mejor performance
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach(entry => {
+            if (!entry.isIntersecting) {
+              // Título fuera de vista: agregar backdrop blur
+              logoContainer.classList.add('backdrop-blur-md', 'bg-purple-dark/30', 'shadow-lg', 'shadow-purple-neon/10');
+              logoContainer.style.borderBottom = '1px solid rgba(168, 85, 247, 0.2)';
+            } else {
+              // Título visible: remover backdrop blur
+              logoContainer.classList.remove('backdrop-blur-md', 'bg-purple-dark/30', 'shadow-lg', 'shadow-purple-neon/10');
+              logoContainer.style.borderBottom = 'none';
+            }
+          });
+        },
+        {
+          threshold: 0,
+          rootMargin: '-100px 0px 0px 0px' // Trigger un poco antes de que salga completamente
+        }
+      );
+      
+      observer.observe(header);
+    }
+  });
+</script>

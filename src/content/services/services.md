@@ -1,0 +1,335 @@
+# Services Configuration
+
+## Level 1-50 Express
+- **ID**: pl-1
+- **Title**: Level 1-50 Express
+- **Category**: power-leveling
+- **Price**: 25
+- **Image**: /images/services/leveling-1.jpg
+- **BarPrice**:
+  - InitValue: 1
+  - FinalValue: 50
+  - Step: 1
+  - Label: Select Level
+- **AdditionalServices**:
+  - addOption1:
+    - Type: checkbox
+    - Value: 10
+    - Label: Priority Queue
+  - addOption2:
+    - Type: checkbox
+    - Value: 15
+    - Label: Express Boost (12h)
+  - addOption3:
+    - Type: checkbox
+    - Value: 8
+    - Label: Stream Service
+- **Description**:
+  - Fast boost from level 1 to 50
+  - Completed in 24-48 hours
+  - Basic equipment included
+
+## Max Level Premium
+- **ID**: pl-2
+- **Title**: Max Level Premium
+- **Category**: power-leveling
+- **Price**: 45
+- **Image**: /images/services/leveling-2.jpg
+- **BoxPrice**:
+  - Basic: 10
+  - Standard: 20
+  - Advanced: 30
+  - Premium: 45
+  - Elite: 60
+  - Ultimate: 80
+- **Description**:
+  - Maximum level guaranteed
+  - Epic equipment included
+  - 24/7 support
+
+## Bronze to Gold
+- **ID**: rb-1
+- **Title**: Bronze to Gold
+- **Category**: ranked-boosting
+- **Price**: 35
+- **Image**: /images/services/ranked-1.jpg
+- **BarPrice**:
+  - InitValue: 500
+  - FinalValue: 2000
+  - Step: 100
+  - Label: Select Rating (MMR)
+- **AdditionalServices**:
+  - addOption1:
+    - Type: checkbox
+    - Value: 20
+    - Label: Duo Queue
+  - addOption2:
+    - Type: checkbox
+    - Value: 12
+    - Label: Specific Champion
+- **Description**:
+  - Guaranteed climb to Gold
+  - Professional players
+  - Live streaming available
+
+## Platinum Package
+- **ID**: rb-2
+- **Title**: Platinum Package
+- **Category**: ranked-boosting
+- **Price**: 65
+- **Image**: /images/services/ranked-2.jpg
+- **BoxPrice**:
+  - Bronze: 15
+  - Silver: 25
+  - Gold: 40
+  - Platinum: 65
+  - Diamond: 90
+- **Description**:
+  - Reach Platinum rank
+  - Priority queue
+  - Coaching included
+
+## Achievement Bundle Basic
+- **ID**: ah-1
+- **Title**: Achievement Bundle Basic
+- **Category**: achievement-hunting
+- **Price**: 20
+- **Image**: /images/services/achievement-1.jpg
+- **BoxPrice**:
+  - Starter: 5
+  - Basic: 10
+  - Standard: 20
+  - Advanced: 35
+  - Pro: 50
+  - Master: 75
+- **Description**:
+  - 10 achievements of your choice
+  - Completed in 3-5 days
+  - Detailed guide included
+
+## 100% Completion
+- **ID**: ah-2
+- **Title**: 100% Completion
+- **Category**: achievement-hunting
+- **Price**: 75
+- **Image**: /images/services/achievement-2.jpg
+- **BarPrice**:
+  - InitValue: 10
+  - FinalValue: 100
+  - Step: 5
+  - Label: Select Achievement Count
+- **BoxPrice**:
+  - 15
+  - 30
+  - 50
+  - 75
+- **AdditionalServices**:
+  - addOption1:
+    - Type: checkbox
+    - Value: 25
+    - Label: Rare Achievements
+  - addOption2:
+    - Type: checkbox
+    - Value: 15
+    - Label: Secret Achievements
+- **Description**:
+  - All game achievements
+  - Rare titles and rewards
+  - Completion guarantee
+
+## Epic Gear Set
+- **ID**: gf-1
+- **Title**: Epic Gear Set
+- **Category**: gear-farming
+- **Price**: 30
+- **Image**: /images/services/gear-1.jpg
+- **BarPrice**:
+  - InitValue: 100
+  - FinalValue: 300
+  - Step: 10
+  - Label: Select Item Level
+- **AdditionalServices**:
+  - addOption1:
+    - Type: checkbox
+    - Value: 25
+    - Label: Best in Slot Items
+  - addOption2:
+    - Type: checkbox
+    - Value: 15
+    - Label: Enchant All Items
+  - addOption3:
+    - Type: checkbox
+    - Value: 10
+    - Label: Socket Gems
+- **Description**:
+  - Complete epic gear set
+  - Optimized stats
+  - Efficient farming
+
+## Legendary Weapons
+- **ID**: gf-2
+- **Title**: Legendary Weapons
+- **Category**: gear-farming
+- **Price**: 50
+- **Image**: /images/services/gear-2.jpg
+- **BoxPrice**:
+  - Common: 20
+  - Rare: 35
+  - Epic: 50
+  - Legendary: 70
+  - Mythic: 100
+- **Description**:
+  - Exclusive legendary weapons
+  - Premium enchants
+  - Improved drop rate
+
+## Normal Dungeon Pack
+- **ID**: dc-1
+- **Title**: Normal Dungeon Pack
+- **Category**: dungeon-carries
+- **Price**: 15
+- **Image**: /images/services/dungeon-1.jpg
+- **CustomPrice**:
+  - Label: Select Amount
+  - Presets:
+    - 5
+    - 10
+    - 15
+    - 25
+- **Description**:
+  - 5 normal dungeons
+  - All loot reserved for you
+  - Completed in 2 hours
+
+## Mythic+ Bundle
+- **ID**: dc-2
+- **Title**: Mythic+ Bundle
+- **Category**: dungeon-carries
+- **Price**: 55
+- **Image**: /images/services/dungeon-2.jpg
+- **BarPrice**:
+  - InitValue: 5
+  - FinalValue: 20
+  - Step: 1
+  - Label: Select Mythic+ Level
+- **AdditionalServices**:
+  - addOption1:
+    - Type: checkbox
+    - Value: 30
+    - Label: Timed Run Guarantee
+  - addOption2:
+    - Type: checkbox
+    - Value: 20
+    - Label: Specific Loot Priority
+- **Description**:
+  - Mythic+15 dungeons
+  - Experienced group
+  - Guaranteed loot
+
+## PvP Basics
+- **ID**: pvp-1
+- **Title**: PvP Basics
+- **Category**: pvp-training
+- **Price**: 25
+- **Image**: /images/services/pvp-1.jpg
+- **CustomPrice**:
+  - Label: Training Sessions
+  - Presets:
+    - 10
+    - 25
+    - 40
+    - 60
+- **Description**:
+  - PvP combat fundamentals
+  - 5 training sessions
+  - Replay analysis
+
+## Arena Mastery
+- **ID**: pvp-2
+- **Title**: Arena Mastery
+- **Category**: pvp-training
+- **Price**: 60
+- **Image**: /images/services/pvp-2.jpg
+- **CustomPrice**:
+  - Label: Advanced Coaching
+  - Presets:
+    - 30
+    - 60
+    - 90
+    - 120
+- **Description**:
+  - Advanced arena training
+  - Team strategies
+  - Personalized coaching
+
+## Normal Raid Clear
+- **ID**: rc-1
+- **Title**: Normal Raid Clear
+- **Category**: raid-completion
+- **Price**: 40
+- **Image**: /images/services/raid-1.jpg
+- **CustomPrice**:
+  - Label: Select Price
+  - Presets:
+    - 20
+    - 40
+    - 60
+    - 80
+- **Description**:
+  - Full raid on normal difficulty
+  - All loot reserved
+  - Organized group
+
+## Heroic Full Clear
+- **ID**: rc-2
+- **Title**: Heroic Full Clear
+- **Category**: raid-completion
+- **Price**: 80
+- **Image**: /images/services/raid-2.jpg
+- **CustomPrice**:
+  - Label: Choose Amount
+  - Presets:
+    - 50
+    - 80
+    - 100
+    - 150
+- **Description**:
+  - Full heroic raid
+  - Mounts and titles included
+  - Top guild carry
+
+## Appearance Makeover
+- **ID**: cc-1
+- **Title**: Appearance Makeover
+- **Category**: character-customization
+- **Price**: 10
+- **Image**: /images/services/custom-1.jpg
+- **CustomPrice**:
+  - Label: Select Price
+  - Presets:
+    - 5
+    - 10
+    - 15
+    - 20
+- **Description**:
+  - Complete appearance change
+  - Style consultation
+  - Exclusive skins
+
+## Premium Cosmetics
+- **ID**: cc-2
+- **Title**: Premium Cosmetics
+- **Category**: character-customization
+- **Price**: 35
+- **Image**: /images/services/custom-2.jpg
+- **CustomPrice**:
+  - Label: Custom Amount
+  - Presets:
+    - 20
+    - 35
+    - 50
+    - 75
+- **Description**:
+  - Premium cosmetics pack
+  - Seasonal items
+  - Special effects

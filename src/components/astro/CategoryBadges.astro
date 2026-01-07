@@ -1,0 +1,27 @@
+---
+interface Props {
+  categories: string[];
+}
+
+const { categories } = Astro.props;
+
+// Cyberpunk color variants
+const colors = [
+  'text-pink-neon border-pink-neon/30 hover:border-pink-neon hover:shadow-pink-neon/20',
+  'text-blue-neon border-blue-neon/30 hover:border-blue-neon hover:shadow-blue-neon/20',
+  'text-green-neon border-green-neon/30 hover:border-green-neon hover:shadow-green-neon/20',
+  'text-purple-neon border-purple-neon/30 hover:border-purple-neon hover:shadow-purple-neon/20'
+];
+---
+
+{categories && categories.length > 0 && (
+  <div class="flex flex-wrap justify-center gap-4">
+    {categories.map((category, index) => (
+      <span 
+        class={`glass-effect px-6 py-3 rounded-md text-base font-semibold transition-smooth cursor-pointer ${colors[index % colors.length]} hover:shadow-lg`}
+      >
+        {category}
+      </span>
+    ))}
+  </div>
+)}

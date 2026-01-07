@@ -1,43 +1,172 @@
-# Astro Starter Kit: Minimal
+# WebCarry - Gaming Services Platform
 
-```sh
-pnpm create astro@latest -- --template minimal
+Plataforma web para servicios gaming profesionales construida con Astro SSR, React, TypeScript y Tailwind CSS 4+.
+
+## 🚀 Tecnologías
+
+- **Astro v5.16.4** - Framework web con SSR
+- **React v19.2.3** - Componentes de cliente interactivos
+- **TypeScript** - Tipado estricto
+- **Tailwind CSS v4.1.18** - Estilos con tema cyberpunk neón
+- **pnpm** - Gestor de paquetes
+
+## 📁 Estructura del Proyecto
+
+```
+src/
+├── components/
+│   ├── astro/              # Componentes estáticos de Astro
+│   │   ├── Footer.astro
+│   │   ├── CategoryBadges.astro
+│   │   └── Breadcrumb.astro
+│   └── react/              # Componentes interactivos de React
+│       ├── GameCards.tsx
+│       ├── CategorySidebar.tsx
+│       ├── ServiceGrid.tsx
+│       ├── PaymentSidebar.tsx
+│       └── MobileMenu.tsx
+├── content/                # Configuración de contenido
+│   ├── config.md           # Archivo editable con todos los textos
+│   ├── categories/
+│   └── services/
+├── layouts/
+│   └── MainLayout.astro    # Layout principal
+├── pages/
+│   ├── index.astro         # Página de inicio
+│   └── game/
+│       └── [id].astro      # Página de servicios por juego
+├── styles/
+│   └── global.css          # Estilos globales y tema cyberpunk
+├── types/
+│   └── index.ts            # Tipos TypeScript
+└── utils/
+    └── content-parser.ts   # Parser del archivo config.md
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+## 🎨 Características del Diseño
 
-## 🚀 Project Structure
+### Tema Cyberpunk Neón
+- Paleta de colores: Morado oscuro, azul, verde, rosa y blanco
+- Efectos de neón y glow
+- Degradados y glassmorphism
+- Patrones de fondo gaming
 
-Inside of your Astro project, you'll see the following folders and files:
+### Páginas Implementadas
 
-```text
-/
-├── public/
-├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
+#### 1. Home (`/`)
+- Título y subtítulo con efectos neón
+- Badges de categorías destacadas
+- Grid de 4 tarjetas de juegos con loading skeleton
+- Footer con iconos de métodos de pago (PayPal, Visa/Mastercard)
+- Responsive: 1 columna en móvil, 2 en tablet, 4 en desktop
+
+#### 2. Página de Servicios (`/game/[id]`)
+- Menú lateral de categorías desplegables (desktop)
+- Menú hamburguesa (móvil)
+- Breadcrumb de navegación
+- Grid de tarjetas de servicios (3 por fila en desktop, 1 en móvil)
+- Cada servicio incluye:
+  - Imagen con degradado
+  - Título
+  - Lista de características (3 puntos)
+  - Precio en USD
+  - Botón de compra
+- Fondo con marcas de agua de personajes gaming
+
+#### 3. Sidebar de Pago
+- Se desliza de derecha a izquierda
+- Vista previa del servicio con imagen
+- Selector de región (EU/US)
+- Opciones de precio predefinidas ($5, $10, $20, $50)
+- Campo para precio personalizado
+- Checkbox de aceptación de políticas
+- Botones de métodos de pago (PayPal y Tarjeta)
+- Total y botón de pago
+
+## 📝 Configuración de Contenido
+
+Todo el contenido se gestiona desde `src/content/config.md`. Este archivo permite:
+
+- ✅ Editar textos del home (título, subtítulo, categorías)
+- ✅ Agregar/editar/eliminar juegos
+- ✅ Agregar/editar/eliminar categorías de servicios
+- ✅ Agregar/editar/eliminar servicios individuales
+- ✅ Configurar precios
+- ✅ URLs de imágenes
+
+### Ejemplo de Edición
+
+```markdown
+### Juego 5
+- **ID**: game-5
+- **Título**: Shadow Realms
+- **Categoría**: Action RPG
+- **Imagen**: /images/games/shadow-realms.jpg
 ```
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+## 🚀 Comandos
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+```bash
+# Instalar dependencias
+pnpm install
 
-Any static assets, like images, can be placed in the `public/` directory.
+# Modo desarrollo
+pnpm dev
 
-## 🧞 Commands
+# Construir para producción
+pnpm build
 
-All commands are run from the root of the project, from a terminal:
+# Previsualizar build de producción
+pnpm preview
+```
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `pnpm install`             | Installs dependencies                            |
-| `pnpm dev`             | Starts local dev server at `localhost:4321`      |
-| `pnpm build`           | Build your production site to `./dist/`          |
-| `pnpm preview`         | Preview your build locally, before deploying     |
-| `pnpm astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `pnpm astro -- --help` | Get help using the Astro CLI                     |
+## 🌐 SSR (Server-Side Rendering)
 
-## 👀 Want to learn more?
+El proyecto está configurado con SSR usando `@astrojs/node` en modo standalone:
 
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+- Renderizado del lado del servidor para mejor SEO
+- Componentes React con hidratación (`client:load`)
+- Rutas dinámicas generadas estáticamente en build time
+
+## 📱 Responsive Design
+
+### Breakpoints
+- **Mobile**: < 640px (1 columna)
+- **Tablet**: 640px - 1024px (2 columnas)
+- **Desktop**: > 1024px (3-4 columnas)
+
+### Características Mobile
+- Menú hamburguesa para categorías
+- Sidebars deslizables
+- Ajuste de tipografías
+- Optimización de imágenes skeleton
+
+## 🎯 Componentes React Asíncronos
+
+Todos los componentes React implementan loading skeleton:
+
+1. Estado de carga inicial
+2. Skeleton con animación de shimmer
+3. Carga de datos simulada (setTimeout)
+4. Renderizado final con datos reales
+
+## 🎨 Clases CSS Personalizadas
+
+- `.neon-text` - Efecto de texto neón
+- `.neon-border` - Borde con efecto neón
+- `.neon-glow` - Glow effect
+- `.neon-pulse` - Animación de pulso
+- `.skeleton` - Loading skeleton animado
+- `.glass-effect` - Glassmorphism
+- `.card-hover` - Efecto hover para tarjetas
+
+## 🔧 Validaciones
+
+Todos los componentes validan datos antes de renderizar:
+- Verificación de arrays vacíos
+- Validación de props requeridas
+- Fallbacks para contenido faltante
+
+## 📄 Licencia
+
+Proyecto creado para WebCarry © 2025

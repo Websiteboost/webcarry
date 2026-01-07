@@ -1,0 +1,114 @@
+---
+// Logo component with glitch effect
+---
+
+<a href="/" class="glitch-logo">
+  <span class="glitch-text" data-text="WEBCARRY">WEBCARRY</span>
+</a>
+
+<style>
+  .glitch-logo {
+    display: inline-block;
+    text-decoration: none;
+    position: relative;
+    z-index: 50;
+  }
+
+  .glitch-text {
+    font-family: 'Orbitron', 'Rajdhani', 'Press Start 2P', monospace, sans-serif;
+    font-size: 2.5rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--color-cyber-white);
+    position: relative;
+    display: inline-block;
+    text-shadow: 
+      0 0 10px rgba(168, 85, 247, 0.8),
+      0 0 20px rgba(168, 85, 247, 0.5),
+      0 0 30px rgba(168, 85, 247, 0.3);
+    transition: all 0.3s ease;
+  }
+
+  .glitch-text::before,
+  .glitch-text::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.8;
+  }
+
+  .glitch-text::before {
+    color: var(--color-cyber-blue-light);
+    animation: glitch-1 2.5s infinite;
+    clip-path: polygon(0 0, 100% 0, 100% 45%, 0 45%);
+    text-shadow: -2px 0 var(--color-cyber-blue-light);
+  }
+
+  .glitch-text::after {
+    color: var(--color-cyber-pink-light);
+    animation: glitch-2 2.5s infinite;
+    clip-path: polygon(0 55%, 100% 55%, 100% 100%, 0 100%);
+    text-shadow: 2px 0 var(--color-cyber-pink-light);
+  }
+
+  .glitch-logo:hover .glitch-text {
+    text-shadow: 
+      0 0 15px rgba(168, 85, 247, 1),
+      0 0 30px rgba(168, 85, 247, 0.8),
+      0 0 45px rgba(168, 85, 247, 0.6);
+  }
+
+  .glitch-logo:hover .glitch-text::before {
+    animation: glitch-1 0.3s infinite;
+  }
+
+  .glitch-logo:hover .glitch-text::after {
+    animation: glitch-2 0.3s infinite;
+  }
+
+  @keyframes glitch-1 {
+    0%, 100% {
+      transform: translate(0);
+    }
+    20% {
+      transform: translate(-2px, 2px);
+    }
+    40% {
+      transform: translate(-2px, -2px);
+    }
+    60% {
+      transform: translate(2px, 2px);
+    }
+    80% {
+      transform: translate(2px, -2px);
+    }
+  }
+
+  @keyframes glitch-2 {
+    0%, 100% {
+      transform: translate(0);
+    }
+    20% {
+      transform: translate(2px, -2px);
+    }
+    40% {
+      transform: translate(2px, 2px);
+    }
+    60% {
+      transform: translate(-2px, -2px);
+    }
+    80% {
+      transform: translate(-2px, 2px);
+    }
+  }
+
+  @media (max-width: 640px) {
+    .glitch-text {
+      font-size: 1.75rem;
+    }
+  }
+</style>

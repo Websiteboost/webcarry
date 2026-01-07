@@ -1,0 +1,28 @@
+---
+interface Props {
+  path: { name: string; url: string }[];
+}
+
+const { path } = Astro.props;
+---
+
+{path && path.length > 0 && (
+  <nav class="flex items-center space-x-2 text-sm mb-6">
+    {path.map((item, index) => (
+      <>
+        <a 
+          href={item.url}
+          class:list={[
+            'hover:text-pink-neon transition-colors',
+            index === path.length - 1 ? 'text-pink-neon font-semibold' : 'text-blue-neon'
+          ]}
+        >
+          {item.name}
+        </a>
+        {index < path.length - 1 && (
+          <span class="text-cyber-white/30">/</span>
+        )}
+      </>
+    ))}
+  </nav>
+)}
