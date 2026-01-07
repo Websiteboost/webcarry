@@ -1,0 +1,61 @@
+---
+// Background BB watermark component
+---
+
+<div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
+  <!-- Left BB Watermark -->
+  <div class="absolute -left-10 top-1/4 w-125 h-125 opacity-[0.03]">
+    <svg viewBox="0 0 300 200" class="w-full h-full">
+      <defs>
+        <filter id="glow-purple">
+          <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+          <feMerge>
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+        <linearGradient id="gradient-purple" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:rgb(168,85,247);stop-opacity:1" />
+          <stop offset="100%" style="stop-color:rgb(139,92,246);stop-opacity:1" />
+        </linearGradient>
+      </defs>
+      <text x="20" y="140" 
+            font-family="'Orbitron', 'Rajdhani', 'Press Start 2P', monospace" 
+            font-size="120" 
+            font-weight="900"
+            letter-spacing="10"
+            fill="url(#gradient-purple)"
+            stroke="rgba(168, 85, 247, 0.8)"
+            stroke-width="3"
+            filter="url(#glow-purple)">BB</text>
+    </svg>
+  </div>
+  
+  <!-- Right BB Watermark -->
+  <div class="absolute -right-10 bottom-1/4 w-125 h-125 opacity-[0.03] rotate-12">
+    <svg viewBox="0 0 300 200" class="w-full h-full">
+      <defs>
+        <filter id="glow-blue">
+          <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+          <feMerge>
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+        <linearGradient id="gradient-blue" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:rgb(56,189,248);stop-opacity:1" />
+          <stop offset="100%" style="stop-color:rgb(14,165,233);stop-opacity:1" />
+        </linearGradient>
+      </defs>
+      <text x="20" y="140" 
+            font-family="'Orbitron', 'Rajdhani', 'Press Start 2P', monospace" 
+            font-size="120" 
+            font-weight="900"
+            letter-spacing="10"
+            fill="url(#gradient-blue)"
+            stroke="rgba(56, 189, 248, 0.8)"
+            stroke-width="3"
+            filter="url(#glow-blue)">BB</text>
+    </svg>
+  </div>
+</div>
