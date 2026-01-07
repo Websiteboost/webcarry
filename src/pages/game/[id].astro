@@ -31,7 +31,7 @@ if (!game) {
 const breadcrumbPath = [
   { name: 'Home', url: '/' },
   { name: game.title, url: `/game/${game.id}` },
-  { name: 'Servicios', url: `/game/${game.id}` }
+  { name: 'Services', url: `/game/${game.id}` }
 ];
 
 // Filtrar servicios por juego (si no tiene games definido, se muestra en todos)
@@ -40,7 +40,7 @@ const gameServices = services.filter((service: any) =>
 );
 ---
 
-<MainLayout title={`${game.title} - Servicios | BattleBoosting`}>
+<MainLayout title={`${game.title} - Services | BattleBoosting`}>
   <!-- Logo: top-right inicial en mobile, bottom-left con scroll; top-left sticky en desktop -->
   <div id="game-logo" class="fixed top-6 right-6 z-50 p-3 sm:sticky sm:top-0 sm:left-0 sm:right-auto sm:p-6">
     <div class="transition-all duration-700 ease-in-out opacity-100">
