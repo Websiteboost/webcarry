@@ -4,7 +4,7 @@
 Accepted payment methods
 
 ## Copyright Text
-© 2025 WebCarry. All rights reserved.
+© 2025 BattleBoosting. All rights reserved.
 
 ## Payment Method 1
 - **Name**: PayPal

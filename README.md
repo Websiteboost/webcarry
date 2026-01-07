@@ -1,4 +1,4 @@
-# WebCarry - Gaming Services Platform
+# BattleBoosting - Gaming Services Platform
 
 Plataforma web para servicios gaming profesionales construida con Astro SSR, React, TypeScript y Tailwind CSS 4+.
 

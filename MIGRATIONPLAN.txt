@@ -1,5 +1,5 @@
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║                     WEBCARRY - MIGRATION PLAN TO DATABASE                    ║
+║                     BattleBoosting - MIGRATION PLAN TO DATABASE                    ║
 ║                         From Markdown Files to PostgreSQL                    ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 
@@ -313,7 +313,7 @@ pnpm add -D drizzle-kit tsx
 └─────────────────────────────────────────────────────────────────────────────┘
 
 # Base de datos
-DATABASE_URL=postgresql://user:password@localhost:5432/webcarry
+DATABASE_URL=postgresql://user:password@localhost:5432/BattleBoosting
 
 # Autenticación
 SESSION_SECRET=your-super-secret-key-min-32-chars
@@ -375,7 +375,7 @@ Estrategia:
 3. Inserta usando Drizzle ORM
 
 Datos iniciales:
-  • 2 usuarios admin (admin@webcarry.com, admin2@webcarry.com)
+  • 2 usuarios admin (admin@BattleBoosting.com, admin2@BattleBoosting.com)
   • 4 juegos desde config.md
   • 8 categorías desde categories/categories.md
   • 16 servicios desde services/services.md
@@ -514,12 +514,12 @@ Comando: pnpm tsx src/lib/db/seed.ts
 │ USUARIOS ADMIN INICIALES (creados en seed)                                 │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │ Usuario 1:                                                                  │
-│   Email:    admin@webcarry.com                                              │
+│   Email:    admin@BattleBoosting.com                                              │
 │   Password: Admin123!                                                       │
 │   Role:     admin                                                           │
 │                                                                              │
 │ Usuario 2:                                                                  │
-│   Email:    admin2@webcarry.com                                             │
+│   Email:    admin2@BattleBoosting.com                                             │
 │   Password: Admin456!                                                       │
 │   Role:     admin                                                           │
 │                                                                              │
@@ -680,7 +680,7 @@ FASE 8: LIMPIEZA (opcional)
 │                                                                              │
 │ [2] Obtener token desde Vercel Dashboard:                                  │
 │     • Ir a: https://vercel.com/dashboard → Storage → Blob                  │
-│     • Crear nuevo Blob Store: "webcarry-images"                            │
+│     • Crear nuevo Blob Store: "BattleBoosting-images"                            │
 │     • Copiar token: BLOB_READ_WRITE_TOKEN                                  │
 │                                                                              │
 │ [3] Agregar a .env:                                                         │
