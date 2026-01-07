@@ -6,6 +6,7 @@ import CategorySidebar from '../../components/react/CategorySidebar';
 import ServiceGrid from '../../components/react/ServiceGrid';
 import MobileMenu from '../../components/react/MobileMenu';
 import GlitchLogo from '../../components/astro/GlitchLogo.astro';
+import BackgroundLogo from '../../components/astro/BackgroundLogo.astro';
 import { getSiteContent, getGameById } from '../../utils/content-parser';
 
 export const prerender = true;
@@ -51,32 +52,8 @@ const gameServices = services.filter((service: any) =>
   <MobileMenu client:load categories={categories} />
 
   <main class="min-h-screen pt-24 pb-8 relative">
-    <!-- Background Characters (MMO Style) -->
-    <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
-      <!-- Left Character Watermark -->
-      <div class="absolute -left-20 top-1/4 w-96 h-96 opacity-5">
-        <svg viewBox="0 0 200 200" class="w-full h-full text-purple-neon">
-          <circle cx="100" cy="60" r="30" fill="currentColor"/>
-          <rect x="85" y="95" width="30" height="50" fill="currentColor"/>
-          <polygon points="85,100 70,130 85,145" fill="currentColor"/>
-          <polygon points="115,100 130,130 115,145" fill="currentColor"/>
-          <rect x="85" y="145" width="12" height="40" fill="currentColor"/>
-          <rect x="103" y="145" width="12" height="40" fill="currentColor"/>
-        </svg>
-      </div>
-      
-      <!-- Right Character Watermark -->
-      <div class="absolute -right-20 bottom-1/4 w-96 h-96 opacity-5 rotate-12">
-        <svg viewBox="0 0 200 200" class="w-full h-full text-blue-neon">
-          <circle cx="100" cy="60" r="30" fill="currentColor"/>
-          <rect x="85" y="95" width="30" height="50" fill="currentColor"/>
-          <polygon points="85,100 70,130 85,145" fill="currentColor"/>
-          <polygon points="115,100 130,130 115,145" fill="currentColor"/>
-          <rect x="85" y="145" width="12" height="40" fill="currentColor"/>
-          <rect x="103" y="145" width="12" height="40" fill="currentColor"/>
-        </svg>
-      </div>
-    </div>
+    <!-- Background BB Watermark -->
+    <BackgroundLogo />
 
     <div class="w-full max-w-full overflow-x-hidden relative z-10">
       <!-- Main Content -->
