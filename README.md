@@ -208,4 +208,4 @@ Todos los componentes validan datos antes de renderizar:
 
 ## 📄 Licencia
 
-Proyecto creado para WebCarry © 2025
+Proyecto creado para AzanoRivers © 2026
