@@ -1,9 +1,9 @@
-# Website Configuration - WebCarry
+# Website Configuration - BattleBoosting
 
 ## Home Information
 
 ### Main Title
-WebCarry Gaming Services
+BattleBoosting Gaming Services
 
 ### Subtitle
 Your trusted platform for professional gaming services

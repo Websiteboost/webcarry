@@ -1,10 +1,10 @@
-# ⚡ Quick Start - WebCarry
+# ⚡ Quick Start - BattleBoosting
 
 ## 🚀 Inicio Rápido
 
 ### 1. Instalar Dependencias (si no lo has hecho)
 ```bash
-cd c:\DevCode\Repositories\Webcarry
+cd c:\DevCode\Repositories\BattleBoosting
 pnpm install
 ```
 
