@@ -31,9 +31,9 @@ const breadcrumbPath = [
   { name: 'Servicios', url: `/game/${game.id}` }
 ];
 
-// Filtrar servicios por categorías disponibles
+// Filtrar servicios por juego (si no tiene games definido, se muestra en todos)
 const gameServices = services.filter((service: any) =>
-  categories.some((cat: any) => cat.id === service.categoryId)
+  !service.games || service.games.length === 0 || service.games.includes(game.id)
 );
 ---
 

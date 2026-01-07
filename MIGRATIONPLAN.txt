@@ -1,0 +1,932 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                     WEBCARRY - MIGRATION PLAN TO DATABASE                    ║
+║                         From Markdown Files to PostgreSQL                    ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. PROPÓSITO DE LA MIGRACIÓN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Migrar el sistema de contenido estático (.md files) a una base de datos 
+PostgreSQL con las siguientes mejoras:
+
+  ✓ Contenido editable dinámicamente (sin deployments)
+  ✓ Sistema de autenticación con usuarios admin
+  ✓ Panel de administración para gestionar contenido
+  ✓ Relaciones de datos más robustas
+  ✓ Búsquedas y filtros eficientes
+  ✓ Escalabilidad para múltiples usuarios
+  ✓ Backup y versionado de contenido
+
+FASE: Migración gradual con convivencia .md + BD
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2. STACK TECNOLÓGICO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ BASE DE DATOS                                                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ • PostgreSQL 15+                    → Base de datos relacional             │
+│ • Drizzle ORM                       → TypeScript-first ORM                 │
+│ • drizzle-kit                       → CLI para migraciones                 │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ AUTENTICACIÓN                                                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ • Lucia Auth v3                     → Session-based auth para Astro        │
+│ • @node-rs/argon2                   → Hashing de passwords                 │
+│ • oslo                              → Utilidades crypto                    │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ DEPENDENCIAS ADICIONALES                                                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ • postgres                          → Driver PostgreSQL                    │
+│ • tsx                               → Ejecutar scripts TypeScript          │
+│ • dotenv                            → Variables de entorno                 │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+COMANDO DE INSTALACIÓN:
+pnpm add drizzle-orm postgres lucia oslo @node-rs/argon2
+pnpm add -D drizzle-kit tsx
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3. MODELO DE DATOS (POSTGRESQL SCHEMA)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ TABLA: users                                                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ • id                  VARCHAR(21)      PRIMARY KEY                          │
+│ • email               VARCHAR(255)     UNIQUE, NOT NULL                     │
+│ • password_hash       TEXT             NOT NULL                             │
+│ • role                VARCHAR(50)      DEFAULT 'user' ('admin'|'user')      │
+│ • created_at          TIMESTAMP        DEFAULT NOW()                        │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ TABLA: sessions (para Lucia Auth)                                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ • id                  VARCHAR(40)      PRIMARY KEY                          │
+│ • user_id             VARCHAR(21)      FK -> users.id, ON DELETE CASCADE    │
+│ • expires_at          TIMESTAMP        NOT NULL                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ TABLA: games                                                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ • id                  VARCHAR(50)      PRIMARY KEY (ej: "game-1")           │
+│ • title               VARCHAR(255)     NOT NULL                             │
+│ • category            VARCHAR(100)     NOT NULL                             │
+│ • image               TEXT             NOT NULL                             │
+│ • created_at          TIMESTAMP        DEFAULT NOW()                        │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ TABLA: categories                                                           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ • id                  VARCHAR(100)     PRIMARY KEY (ej: "power-leveling")   │
+│ • name                VARCHAR(255)     NOT NULL                             │
+│ • description         TEXT             NOT NULL                             │
+│ • icon                VARCHAR(50)      NOT NULL (Lucide icon name)          │
+│ • created_at          TIMESTAMP        DEFAULT NOW()                        │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ TABLA: services                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ • id                  VARCHAR(50)      PRIMARY KEY (ej: "pl-1")             │
+│ • title               VARCHAR(255)     NOT NULL                             │
+│ • category_id         VARCHAR(100)     FK -> categories.id                  │
+│ • price               DECIMAL(10,2)    NOT NULL                             │
+│ • image               TEXT             NOT NULL                             │
+│ • description         TEXT[]           PostgreSQL array                     │
+│ • created_at          TIMESTAMP        DEFAULT NOW()                        │
+│ • updated_at          TIMESTAMP        DEFAULT NOW()                        │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ TABLA: service_games (Many-to-Many)                                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ • service_id          VARCHAR(50)      FK -> services.id, ON DELETE CASCADE │
+│ • game_id             VARCHAR(50)      FK -> games.id, ON DELETE CASCADE    │
+│ • PRIMARY KEY (service_id, game_id)                                         │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ TABLA: service_prices                                                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ • id                  UUID             PRIMARY KEY                          │
+│ • service_id          VARCHAR(50)      FK -> services.id, ON DELETE CASCADE │
+│ • type                VARCHAR(50)      NOT NULL                             │
+│                                        ('bar'|'box'|'custom'|'selectors'|   │
+│                                         'additional')                        │
+│ • config              JSONB            NOT NULL (almacena config flexible)  │
+│ • created_at          TIMESTAMP        DEFAULT NOW()                        │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Ejemplo de config JSONB:
+  • type='bar':        {"initValue":1,"finalValue":50,"step":1,"label":"..."}
+  • type='selectors':  {"Raid Size":[{"label":"10","value":0},...]}
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ TABLA: accordion_items                                                      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ • id                  VARCHAR(50)      PRIMARY KEY (ej: "item-1")           │
+│ • title               VARCHAR(255)     NOT NULL                             │
+│ • content             TEXT             NOT NULL                             │
+│ • order               INTEGER          NOT NULL (para ordenamiento)         │
+│ • created_at          TIMESTAMP        DEFAULT NOW()                        │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ TABLA: home_features                                                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ • id                  UUID             PRIMARY KEY                          │
+│ • icon                VARCHAR(50)      NOT NULL (Lucide icon name)          │
+│ • title               VARCHAR(255)     NOT NULL                             │
+│ • description         TEXT             NOT NULL                             │
+│ • order               INTEGER          NOT NULL                             │
+│ • created_at          TIMESTAMP        DEFAULT NOW()                        │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ TABLA: payment_methods                                                      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ • id                  UUID             PRIMARY KEY                          │
+│ • name                VARCHAR(100)     NOT NULL                             │
+│ • icon                VARCHAR(50)      NOT NULL                             │
+│ • type                VARCHAR(50)      NOT NULL (ej: "paypal", "card")      │
+│ • created_at          TIMESTAMP        DEFAULT NOW()                        │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ TABLA: site_config (Singleton - solo 1 registro)                           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ • id                  INTEGER          PRIMARY KEY DEFAULT 1                │
+│ • home_title          VARCHAR(255)     NOT NULL                             │
+│ • home_subtitle       TEXT             NOT NULL                             │
+│ • home_categories     TEXT[]           PostgreSQL array                     │
+│ • footer_payment_title VARCHAR(255)    NOT NULL                             │
+│ • footer_copyright    TEXT             NOT NULL                             │
+│ • updated_at          TIMESTAMP        DEFAULT NOW()                        │
+│                                                                              │
+│ CHECK: id = 1 (solo permite 1 registro de configuración global)            │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+TOTAL TABLAS: 11
+TOTAL RELACIONES: 5 (3 FK simples + 1 M:N + 1 tabla auth)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4. ESTRUCTURA DE ARCHIVOS A CREAR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+src/
+├── lib/                              [NUEVA CARPETA]
+│   ├── auth/
+│   │   ├── lucia.ts                  → Config de Lucia Auth
+│   │   └── middleware.ts             → Validación de sesiones
+│   │
+│   ├── db/
+│   │   ├── client.ts                 → Cliente PostgreSQL + Drizzle
+│   │   ├── schema.ts                 → Definición de todas las tablas
+│   │   └── seed.ts                   → Script para poblar BD inicial
+│   │
+│   └── services/                     [NUEVA CARPETA - Lógica de negocio]
+│       ├── content.service.ts        → Reemplaza content-parser.ts
+│       ├── auth.service.ts           → Login, register, logout
+│       └── user.service.ts           → Gestión de usuarios
+│
+├── pages/
+│   └── api/                          [NUEVA CARPETA - API Routes]
+│       ├── auth/
+│       │   ├── login.ts              → POST /api/auth/login
+│       │   ├── logout.ts             → POST /api/auth/logout
+│       │   └── session.ts            → GET /api/auth/session
+│       │
+│       └── admin/                    [FUTURO - Panel admin]
+│           ├── games.ts
+│           ├── services.ts
+│           └── users.ts
+│
+├── types/
+│   └── lucia.d.ts                    → Declaraciones de tipos para Lucia
+│
+└── middleware.ts                     [NUEVO ARCHIVO]
+                                      → Middleware global de Astro
+
+drizzle/
+└── migrations/                       [NUEVA CARPETA - Auto-generada]
+    ├── 0000_initial_schema.sql
+    └── meta/
+
+drizzle.config.ts                     [NUEVO ARCHIVO]
+                                      → Configuración de Drizzle Kit
+
+.env                                  [ACTUALIZAR]
+                                      → Variables de entorno
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5. ARCHIVOS A MODIFICAR/REEMPLAZAR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ ARCHIVO                        ACCIÓN                                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ src/utils/content-parser.ts   → DEPRECAR (mantener como backup)            │
+│                                  Crear src/lib/services/content.service.ts  │
+│                                                                              │
+│ src/pages/index.astro          → MODIFICAR                                  │
+│                                  Importar: contentService en vez de parser  │
+│                                                                              │
+│ src/pages/game/[id].astro      → MODIFICAR                                  │
+│                                  Importar: contentService en vez de parser  │
+│                                                                              │
+│ src/types/index.ts             → EXTENDER                                   │
+│                                  Agregar: DatabaseUser, Session, etc.       │
+│                                                                              │
+│ astro.config.mjs               → MODIFICAR                                  │
+│                                  Configurar: middleware                     │
+│                                                                              │
+│ package.json                   → MODIFICAR                                  │
+│                                  Agregar: scripts para DB                   │
+│                                                                              │
+│ .env                           → ACTUALIZAR                                 │
+│                                  Agregar: DATABASE_URL, SESSION_SECRET      │
+│                                                                              │
+│ .gitignore                     → ACTUALIZAR                                 │
+│                                  Agregar: drizzle/, .env.local              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ ARCHIVOS .MD - ESTRATEGIA DE MIGRACIÓN                                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ src/content/*.md               → MANTENER (fase de transición)             │
+│                                  Usar como fuente para seed inicial         │
+│                                  Eliminar después de validar BD             │
+│                                                                              │
+│ Variable de control:                                                        │
+│   USE_DATABASE=false           → Lee desde .md (actual)                     │
+│   USE_DATABASE=true            → Lee desde PostgreSQL                       │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6. LÓGICA A MODIFICAR (ARCHIVOS AFECTADOS)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1] src/pages/index.astro
+    CAMBIO: Reemplazar getSiteContent() por contentService.getSiteContent()
+    AGREGAR: Validación de sesión (opcional para admin features)
+
+[2] src/pages/game/[id].astro
+    CAMBIO: Reemplazar getGameById() por contentService.getGameById()
+    CAMBIO: Filtrado de servicios ahora query SQL en vez de array filter
+
+[3] src/components/react/ServiceGrid.tsx
+    SIN CAMBIOS: Props reciben misma estructura, solo fuente cambia
+
+[4] src/components/react/PaymentSidebar.tsx
+    SIN CAMBIOS: Componente sigue funcionando igual
+
+[5] src/components/react/GameCards.tsx
+    POSIBLE MEJORA: Agregar skeleton mientras carga desde BD
+
+[6] astro.config.mjs
+    AGREGAR: export default defineConfig({ output: 'server', ... })
+    VERIFICAR: Ya está en modo SSR, confirmar adapter
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7. CONFIGURACIÓN DE BASE DE DATOS (POSTGRESQL)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ PASO 1: INSTALACIÓN DE DEPENDENCIAS                                        │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+pnpm add drizzle-orm postgres lucia oslo @node-rs/argon2
+pnpm add -D drizzle-kit tsx
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ PASO 2: VARIABLES DE ENTORNO (.env)                                        │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+# Base de datos
+DATABASE_URL=postgresql://user:password@localhost:5432/webcarry
+
+# Autenticación
+SESSION_SECRET=your-super-secret-key-min-32-chars
+
+# Control de migración
+USE_DATABASE=false  # false=usa .md, true=usa PostgreSQL
+
+# Ambiente
+NODE_ENV=development
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ PASO 3: CONFIGURACIÓN DE DRIZZLE (drizzle.config.ts)                       │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Archivo crea automáticamente:
+- Conexión a PostgreSQL
+- Directorio de migraciones: ./drizzle
+- Schema source: ./src/lib/db/schema.ts
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ PASO 4: CREACIÓN DEL SCHEMA (src/lib/db/schema.ts)                         │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Define todas las tablas usando Drizzle ORM:
+- pgTable() para cada tabla
+- relaciones() para FK
+- Tipos exportados para TypeScript
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ PASO 5: GENERAR MIGRACIONES SQL                                            │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Comando: pnpm drizzle-kit generate:pg
+
+Genera:
+  drizzle/
+  └── migrations/
+      ├── 0000_initial_schema.sql
+      └── meta/
+          └── _journal.json
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ PASO 6: EJECUTAR MIGRACIONES                                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Comando: pnpm drizzle-kit migrate
+
+Crea todas las tablas en PostgreSQL
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ PASO 7: SEED - POBLAR BASE DE DATOS INICIAL                                │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Archivo: src/lib/db/seed.ts
+
+Estrategia:
+1. Ejecuta parsers actuales para leer .md
+2. Transforma datos al formato de BD
+3. Inserta usando Drizzle ORM
+
+Datos iniciales:
+  • 2 usuarios admin (admin@webcarry.com, admin2@webcarry.com)
+  • 4 juegos desde config.md
+  • 8 categorías desde categories/categories.md
+  • 16 servicios desde services/services.md
+  • ~30 registros de service_prices (configs de precios)
+  • ~20 relaciones service_games
+  • 15 accordion items
+  • 4 home features
+  • 2 payment methods
+  • 1 site_config
+
+Comando: pnpm tsx src/lib/db/seed.ts
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ PASO 8: SCRIPTS EN PACKAGE.JSON                                            │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+"scripts": {
+  "db:generate": "drizzle-kit generate:pg",
+  "db:migrate": "drizzle-kit migrate",
+  "db:seed": "tsx src/lib/db/seed.ts",
+  "db:studio": "drizzle-kit studio",
+  "db:drop": "drizzle-kit drop",
+  "db:reset": "pnpm db:drop && pnpm db:migrate && pnpm db:seed"
+}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8. SISTEMA DE AUTENTICACIÓN (LUCIA AUTH)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ ARCHIVO: src/lib/auth/lucia.ts                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ PROPÓSITO: Configuración central de Lucia Auth                             │
+│                                                                              │
+│ CONTENIDO:                                                                  │
+│   • Inicialización de Lucia con DrizzleAdapter                             │
+│   • Configuración de cookies (HTTP-only, Secure)                           │
+│   • getUserAttributes para agregar email, role al objeto session           │
+│   • Exporta instancia lucia                                                │
+│                                                                              │
+│ EJEMPLO DE USO:                                                             │
+│   import { lucia } from './lib/auth/lucia';                                │
+│   const session = await lucia.createSession(userId, {});                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ ARCHIVO: src/lib/auth/middleware.ts                                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ PROPÓSITO: Validar sesiones en páginas protegidas                          │
+│                                                                              │
+│ FUNCIONES:                                                                  │
+│   • validateSession(request): Valida cookie de sesión                      │
+│   • requireAuth(request): Valida y lanza error si no autenticado           │
+│   • requireAdmin(request): Valida role === 'admin'                         │
+│                                                                              │
+│ USO EN .ASTRO:                                                              │
+│   const session = await validateSession(Astro.request);                    │
+│   if (!session) return Astro.redirect('/login');                           │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ ARCHIVO: src/lib/services/auth.service.ts                                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ PROPÓSITO: Lógica de negocio de autenticación                              │
+│                                                                              │
+│ MÉTODOS:                                                                    │
+│   • login(email, password)                                                  │
+│       → Valida credenciales con Argon2                                     │
+│       → Crea sesión con lucia.createSession()                              │
+│       → Retorna sessionCookie                                               │
+│                                                                              │
+│   • logout(sessionId)                                                       │
+│       → Invalida sesión con lucia.invalidateSession()                      │
+│       → Crea blank cookie                                                   │
+│                                                                              │
+│   • register(email, password, role)                                         │
+│       → Hash password con @node-rs/argon2                                  │
+│       → Inserta en tabla users                                              │
+│       → Retorna userId                                                      │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ API ROUTES DE AUTENTICACIÓN                                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ POST /api/auth/login                                                        │
+│   Body: { email, password }                                                 │
+│   Response: { success: true } + Set-Cookie                                  │
+│                                                                              │
+│ POST /api/auth/logout                                                       │
+│   Cookies: session cookie                                                   │
+│   Response: { success: true } + Clear-Cookie                                │
+│                                                                              │
+│ GET /api/auth/session                                                       │
+│   Cookies: session cookie                                                   │
+│   Response: { user: { id, email, role } } o null                           │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ FLUJO COMPLETO DE LOGIN                                                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ 1. Usuario envía POST a /api/auth/login con email + password              │
+│                                                                              │
+│ 2. auth.service.login():                                                    │
+│    • Query BD para encontrar user por email                                │
+│    • Verifica password con argon2.verify()                                 │
+│    • Si válido, llama lucia.createSession(userId)                          │
+│                                                                              │
+│ 3. Lucia crea registro en tabla sessions:                                  │
+│    • Genera session.id aleatorio                                            │
+│    • Guarda user_id + expires_at                                            │
+│                                                                              │
+│ 4. Se envía cookie HTTP-only al cliente:                                   │
+│    Set-Cookie: auth_session=<session_id>; HttpOnly; Secure; SameSite       │
+│                                                                              │
+│ 5. En páginas protegidas:                                                  │
+│    • Lee cookie auth_session                                                │
+│    • Llama lucia.validateSession(sessionId)                                │
+│    • Si válida, obtiene datos del usuario                                   │
+│    • Si inválida/expirada, redirect a /login                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ SEGURIDAD IMPLEMENTADA                                                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ ✓ Passwords hasheados con Argon2 (más seguro que bcrypt)                  │
+│ ✓ Cookies HTTP-only (no accesibles desde JavaScript)                       │
+│ ✓ Cookies Secure en producción (solo HTTPS)                                │
+│ ✓ SameSite=Lax (protección CSRF)                                           │
+│ ✓ Sesiones con expiración automática (30 días default)                     │
+│ ✓ Session refresh automático por Lucia                                     │
+│ ✓ Invalidación inmediata en logout                                         │
+│ ✓ Role-based access control (admin vs user)                                │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ USUARIOS ADMIN INICIALES (creados en seed)                                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Usuario 1:                                                                  │
+│   Email:    admin@webcarry.com                                              │
+│   Password: Admin123!                                                       │
+│   Role:     admin                                                           │
+│                                                                              │
+│ Usuario 2:                                                                  │
+│   Email:    admin2@webcarry.com                                             │
+│   Password: Admin456!                                                       │
+│   Role:     admin                                                           │
+│                                                                              │
+│ NOTA: Passwords hasheados con Argon2 en seed.ts                            │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9. SERVICIO DE CONTENIDO (REEMPLAZO DEL PARSER)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ ARCHIVO: src/lib/services/content.service.ts                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ CLASE: ContentService                                                       │
+│                                                                              │
+│ MÉTODOS PRINCIPALES:                                                        │
+│                                                                              │
+│ • getSiteContent()                                                          │
+│     → Query completo: home, games, categories, services, etc.              │
+│     → Combina múltiples queries en un solo objeto SiteContent              │
+│                                                                              │
+│ • getGames()                                                                │
+│     → SELECT * FROM games ORDER BY created_at                              │
+│                                                                              │
+│ • getGameById(id: string)                                                   │
+│     → SELECT * FROM games WHERE id = $1                                     │
+│                                                                              │
+│ • getCategories()                                                           │
+│     → SELECT * FROM categories                                              │
+│     → LEFT JOIN para incluir servicios relacionados                        │
+│                                                                              │
+│ • getServices()                                                             │
+│     → SELECT services.*, categories.name as category_name                  │
+│     → LEFT JOIN service_games para obtener array de games                  │
+│     → LEFT JOIN service_prices para obtener configs de precios            │
+│                                                                              │
+│ • getServicesByGame(gameId: string)                                         │
+│     → SELECT services WHERE game_id IN service_games                       │
+│     → O WHERE service_id NOT IN service_games (disponible para todos)     │
+│                                                                              │
+│ • getAccordion()                                                            │
+│     → SELECT * FROM accordion_items ORDER BY order                         │
+│                                                                              │
+│ • getHomeFeatures()                                                         │
+│     → SELECT * FROM home_features ORDER BY order                           │
+│                                                                              │
+│ EXPORT: export const contentService = new ContentService();                │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ LÓGICA DE TRANSICIÓN (Convivencia .md + BD)                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ En content.service.ts cada método verifica:                                │
+│                                                                              │
+│ if (import.meta.env.USE_DATABASE === 'true') {                             │
+│   // Leer desde PostgreSQL                                                 │
+│   return await db.query.services.findMany();                               │
+│ } else {                                                                    │
+│   // Leer desde .md (parser actual)                                        │
+│   return parseServices();                                                   │
+│ }                                                                            │
+│                                                                              │
+│ VENTAJA: Cambias USE_DATABASE=true y toda la app migra a BD                │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+10. ORDEN DE IMPLEMENTACIÓN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+FASE 1: SETUP BASE DE DATOS
+  [1] Instalar dependencias
+  [2] Crear drizzle.config.ts
+  [3] Crear src/lib/db/schema.ts con todas las tablas
+  [4] Generar migraciones (pnpm db:generate)
+  [5] Actualizar .env con DATABASE_URL
+  [6] Ejecutar migraciones (pnpm db:migrate)
+
+FASE 2: SEED DE DATOS 
+  [7] Crear src/lib/db/seed.ts
+  [8] Implementar lógica de lectura de .md + inserción BD
+  [9] Ejecutar seed (pnpm db:seed)
+  [10] Validar datos en PostgreSQL (usar Drizzle Studio)
+
+FASE 3: AUTENTICACIÓN
+  [11] Crear src/lib/auth/lucia.ts
+  [12] Crear src/lib/auth/middleware.ts
+  [13] Crear src/lib/services/auth.service.ts
+  [14] Crear API routes: /api/auth/login, logout, session
+  [15] Crear páginas: /login.astro, /admin/dashboard.astro
+
+FASE 4: CONTENT SERVICE 
+  [16] Crear src/lib/services/content.service.ts
+  [17] Implementar todos los métodos con queries SQL
+  [18] Agregar lógica de transición (USE_DATABASE check)
+
+FASE 5: INTEGRACIÓN 
+  [19] Modificar src/pages/index.astro
+  [20] Modificar src/pages/game/[id].astro
+  [21] Actualizar imports de content-parser → content.service
+
+FASE 6: TESTING 
+  [22] Probar con USE_DATABASE=false (debe funcionar como antes)
+  [23] Probar con USE_DATABASE=true (debe leer desde BD)
+  [24] Probar login/logout
+  [25] Validar todos los servicios se muestran correctamente
+
+FASE 7: GESTIÓN DE IMÁGENES (Vercel Blob)
+  [26] Instalar @vercel/blob
+  [27] Configurar variables de entorno (BLOB_READ_WRITE_TOKEN)
+  [28] Migrar imágenes actuales de /public a Vercel Blob
+  [29] Actualizar URLs en base de datos
+
+FASE 8: LIMPIEZA (opcional)
+  [30] Eliminar archivos .md (después de validar 100%)
+  [31] Remover content-parser.ts
+  [32] Actualizar documentación (README.md)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+10. GESTIÓN DE IMÁGENES (VERCEL BLOB)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ ESTRATEGIA: PostgreSQL NO almacena imágenes, solo URLs                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│ ❌ NO HACER:                                                                │
+│    • Guardar bytes de imagen en PostgreSQL (BYTEA/BLOB)                    │
+│    • Codificar imágenes en Base64 en BD                                    │
+│                                                                              │
+│ ✅ HACER:                                                                   │
+│    • PostgreSQL guarda solo la URL: TEXT field                             │
+│    • Imágenes físicas en CDN (Vercel Blob)                                 │
+│    • Browser cachea automáticamente                                        │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ VERCEL BLOB - ESPECIFICACIONES                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Free Tier:                                                                  │
+│   • 5 GB storage incluido                                                   │
+│   • Suficiente para ~2000 imágenes (promedio 2.5MB c/u)                   │
+│   • CDN global automático                                                   │
+│   • Sin límite de bandwidth                                                 │
+│                                                                              │
+│ Ventajas:                                                                   │
+│   • Integración nativa con Vercel/Astro                                    │
+│   • URLs públicas automáticas                                               │
+│   • Caché edge por defecto                                                  │
+│   • Upload desde admin panel simple                                         │
+│   • No requiere configuración S3/CloudFront                                 │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ PASO A PASO: CONFIGURACIÓN INICIAL                                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ [1] Instalar dependencia:                                                   │
+│     pnpm add @vercel/blob                                                   │
+│                                                                              │
+│ [2] Obtener token desde Vercel Dashboard:                                  │
+│     • Ir a: https://vercel.com/dashboard → Storage → Blob                  │
+│     • Crear nuevo Blob Store: "webcarry-images"                            │
+│     • Copiar token: BLOB_READ_WRITE_TOKEN                                  │
+│                                                                              │
+│ [3] Agregar a .env:                                                         │
+│     BLOB_READ_WRITE_TOKEN=vercel_blob_rw_xxxxxxxxxxxxx                     │
+│                                                                              │
+│ [4] Crear helper para uploads:                                             │
+│     src/lib/services/storage.service.ts                                    │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ ARCHIVO: src/lib/services/storage.service.ts                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ import { put, del, list } from '@vercel/blob';                             │
+│                                                                              │
+│ export class StorageService {                                              │
+│   async uploadImage(file: File, folder: string) {                          │
+│     const filename = `${folder}/${Date.now()}-${file.name}`;               │
+│     const blob = await put(filename, file, {                               │
+│       access: 'public',                                                     │
+│       addRandomSuffix: false                                                │
+│     });                                                                      │
+│     return blob.url; // https://xxx.public.blob.vercel-storage.com/...     │
+│   }                                                                          │
+│                                                                              │
+│   async deleteImage(url: string) {                                          │
+│     await del(url);                                                          │
+│   }                                                                          │
+│ }                                                                            │
+│                                                                              │
+│ export const storageService = new StorageService();                        │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ MIGRACIÓN DE IMÁGENES EXISTENTES                                           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Script: scripts/migrate-images.ts                                          │
+│                                                                              │
+│ Proceso:                                                                    │
+│ 1. Lee todas las imágenes de /public/images/                               │
+│ 2. Sube cada imagen a Vercel Blob                                          │
+│ 3. Obtiene URL: https://xxx.public.blob.vercel-storage.com/games/game1.jpg │
+│ 4. Actualiza BD:                                                            │
+│    UPDATE games SET image = '<nueva_url>' WHERE id = 'game-1'              │
+│                                                                              │
+│ Comando: pnpm tsx scripts/migrate-images.ts                                │
+│                                                                              │
+│ Backup: Las imágenes en /public/ se mantienen temporalmente                │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ ESTRUCTURA DE URLs EN BASE DE DATOS                                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ ANTES (local):                                                              │
+│   games.image     = "/images/games/nexus-warriors.jpg"                     │
+│   services.image  = "/images/services/leveling-1.jpg"                      │
+│   categories.icon = "Zap" (Lucide icon name, no cambia)                    │
+│                                                                              │
+│ DESPUÉS (Vercel Blob):                                                      │
+│   games.image     = "https://xxx.blob.vercel-storage.com/games/nexus.jpg"  │
+│   services.image  = "https://xxx.blob.vercel-storage.com/services/lv1.jpg" │
+│   categories.icon = "Zap" (sigue siendo icon name)                         │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ CONSUMO DE IMÁGENES EN COMPONENTES                                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ SIN CAMBIOS en componentes:                                                │
+│                                                                              │
+│ <img src={service.image} alt={service.title} />                            │
+│                                                                              │
+│ Antes: service.image = "/images/services/..."                              │
+│ Ahora: service.image = "https://xxx.blob.vercel-storage.com/..."           │
+│                                                                              │
+│ El browser automáticamente:                                                │
+│   • Cachea la imagen (Cache-Control headers)                               │
+│   • Sirve desde CDN edge más cercano                                        │
+│   • Optimiza con lazy loading                                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ API ROUTE PARA UPLOAD (Panel Admin Futuro)                                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ src/pages/api/admin/upload-image.ts                                        │
+│                                                                              │
+│ export const POST: APIRoute = async ({ request }) => {                     │
+│   const formData = await request.formData();                               │
+│   const file = formData.get('image') as File;                              │
+│   const folder = formData.get('folder') as string; // 'games' | 'services' │
+│                                                                              │
+│   const imageUrl = await storageService.uploadImage(file, folder);         │
+│                                                                              │
+│   return new Response(JSON.stringify({ url: imageUrl }));                  │
+│ };                                                                           │
+│                                                                              │
+│ USO desde panel admin:                                                      │
+│   <form action="/api/admin/upload-image" method="POST"                     │
+│         enctype="multipart/form-data">                                      │
+│     <input type="file" name="image" accept="image/*" />                    │
+│     <input type="hidden" name="folder" value="services" />                 │
+│     <button type="submit">Upload</button>                                   │
+│   </form>                                                                    │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ ORGANIZACIÓN EN VERCEL BLOB                                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Estructura de carpetas (prefijos):                                         │
+│                                                                              │
+│ /games/                  → Imágenes de juegos                              │
+│   - nexus-warriors.jpg                                                      │
+│   - void-legends.jpg                                                        │
+│                                                                              │
+│ /services/               → Imágenes de servicios                           │
+│   - leveling-1.jpg                                                          │
+│   - dungeon-1.jpg                                                           │
+│   - raid-2.jpg                                                              │
+│                                                                              │
+│ /categories/             → Íconos de categorías (si necesario)             │
+│                                                                              │
+│ /payment-methods/        → Logos de métodos de pago                        │
+│                                                                              │
+│ NOTA: Vercel Blob no tiene folders reales, usa prefijos en nombres         │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ FLUJO COMPLETO: CREACIÓN DE SERVICIO CON IMAGEN                            │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ 1. Admin sube imagen desde panel                                           │
+│    POST /api/admin/upload-image                                             │
+│    → Retorna: { url: "https://xxx.blob.../services/nuevo-123.jpg" }        │
+│                                                                              │
+│ 2. Admin crea servicio con esa URL                                          │
+│    POST /api/admin/services                                                 │
+│    Body: { title: "...", image: "https://xxx.blob.../...", ... }           │
+│                                                                              │
+│ 3. Backend inserta en PostgreSQL                                            │
+│    INSERT INTO services (id, title, image, ...)                            │
+│    VALUES ('new-1', 'New Service', 'https://xxx.blob.../...', ...)         │
+│                                                                              │
+│ 4. Usuario ve servicio en /game/game-1                                     │
+│    <img src="https://xxx.blob.../services/nuevo-123.jpg" />                │
+│    → Browser descarga desde CDN edge cercano                                │
+│    → Cachea automáticamente                                                 │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ RESUMEN: KEYS EN TABLAS PARA IMÁGENES                                      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ games.image           → TEXT (URL completa de Vercel Blob)                 │
+│ services.image        → TEXT (URL completa de Vercel Blob)                 │
+│ categories.icon       → VARCHAR(50) (nombre de Lucide icon, sin cambios)   │
+│ payment_methods.icon  → VARCHAR(50) (nombre de icon o URL si es imagen)    │
+│                                                                              │
+│ TODOS los campos image son:                                                │
+│   • Tipo: TEXT o VARCHAR(500)                                               │
+│   • Valor: URL completa como string                                         │
+│   • No nullable (siempre debe tener imagen)                                 │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+11. HOSTING DE BASE DE DATOS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[ PENDIENTE - A DEFINIR ]
+
+OPCIONES RECOMENDADAS:
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 1. Vercel Postgres                                                         │
+│    ✓ Integración nativa con Astro                                          │
+│    ✓ Free tier: 256 MB storage                                             │
+│    ✓ Edge-ready                                                             │
+│    $ Costo: $0-20/mes                                                       │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 2. Supabase (PostgreSQL managed)                                           │
+│    ✓ Free tier: 500 MB + Auth incluido                                     │
+│    ✓ Dashboard web excelente                                                │
+│    ✓ Backups automáticos                                                    │
+│    $ Costo: $0-25/mes                                                       │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 3. Neon (Serverless PostgreSQL)                                            │
+│    ✓ Free tier generoso                                                    │
+│    ✓ Branching de BD (como Git)                                            │
+│    ✓ Escala a 0 cuando no se usa                                           │
+│    $ Costo: $0-19/mes                                                       │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 4. Railway                                                                  │
+│    ✓ PostgreSQL + hosting del app en un lugar                              │
+│    ✓ $5 crédito gratis/mes                                                 │
+│    ✓ Despliegue automático desde Git                                       │
+│    $ Costo: $5-20/mes                                                       │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+DECISIÓN PENDIENTE: Definir provider antes de producción
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+12. VENTAJAS DE ESTA ARQUITECTURA
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✓ TypeScript end-to-end (desde BD hasta UI)
+✓ Drizzle ORM es type-safe (IntelliSense completo)
+✓ Lucia Auth maneja sesiones automáticamente
+✓ No necesitas escribir lógica JWT manual
+✓ Migración gradual sin romper nada
+✓ Backup de datos en archivos .md
+✓ Queries SQL optimizadas vs array filters
+✓ Escalable a miles de servicios
+✓ Panel de admin fácil de implementar
+✓ Preparado para multi-tenancy futuro
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+13. PRÓXIMOS PASOS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Elegir provider de hosting para PostgreSQL
+2. Ejecutar FASE 1 (Setup BD)
+3. Validar migración exitosa de contenido
+4. Implementar autenticación
+5. Crear panel de administración
+6. Deploy a producción
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+NOTAS FINALES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• Este plan mantiene la estructura actual del proyecto
+• No requiere refactorización masiva de código
+• Fase de transición permite rollback si hay problemas
+• Los componentes React NO necesitan cambios
+• El diseño y estilos permanecen idénticos
+• Drizzle Studio permite ver BD visualmente (pnpm db:studio)
+
+DOCUMENTACIÓN:
+- Drizzle ORM: https://orm.drizzle.team/docs/overview
+- Lucia Auth:  https://lucia-auth.com/
+- Astro DB:    https://docs.astro.build/en/guides/integrations-guide/db/
+
+Fecha de creación: 6 de enero de 2026
+Estado: PLAN APROBADO - Listo para implementación
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                              FIN DEL DOCUMENTO                               ║
+╚══════════════════════════════════════════════════════════════════════════════╝

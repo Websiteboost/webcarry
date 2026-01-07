@@ -111,6 +111,10 @@ function parseServices(): Service[] {
       currentService.title = line.split(':')[1].trim();
     } else if (line.startsWith('- **Category**:')) {
       currentService.categoryId = line.split(':')[1].trim();
+    } else if (line.startsWith('- **Games**:')) {
+      // Parse games array: - **Games**: game-1, game-2, game-3
+      const gamesStr = line.split(':')[1].trim();
+      currentService.games = gamesStr.split(',').map(g => g.trim());
     } else if (line.startsWith('- **Price**:')) {
       currentService.price = parseInt(line.split(':')[1].trim());
     } else if (line.startsWith('- **Image**:')) {
@@ -215,6 +219,12 @@ function parseServices(): Service[] {
       while (i < lines.length && lines[i] && lines[i].trim().startsWith('-')) {
         const customLine = lines[i].trim();
         
+        // Si encontramos otra sección (con **), salir
+        if (customLine.includes('**') && !customLine.includes('CustomPrice')) {
+          i--;
+          break;
+        }
+        
         if (customLine.includes('Label:')) {
           customPrice.label = customLine.split(':')[1].trim();
         } else if (customLine.includes('Presets:')) {
@@ -238,6 +248,63 @@ function parseServices(): Service[] {
       }
       i--;
       currentService.customPrice = customPrice;
+    } else if (line.startsWith('- **Selectors**:')) {
+      // Parse Selectors object
+      const selectors: any = {};
+      i++;
+      
+      while (i < lines.length && lines[i]) {
+        const selectorLine = lines[i].trim();
+        
+        // Si encontramos otra sección (con **), salir
+        if (selectorLine.includes('**')) {
+          break;
+        }
+        
+        // Detectar título del selector (ej: "  - Choose number of characters:")
+        if (selectorLine.startsWith('-') && selectorLine.endsWith(':') && !selectorLine.match(/:\s*\d+$/)) {
+          const selectorTitle = selectorLine.replace(/^-\s+/, '').replace(/:$/, '').trim();
+          const options: any[] = [];
+          i++;
+          
+          // Leer las opciones del selector
+          while (i < lines.length && lines[i]) {
+            const optionLine = lines[i].trim();
+            
+            // Si encontramos otra sección o un nuevo selector, retroceder y salir
+            if (optionLine.includes('**') || (optionLine.startsWith('-') && optionLine.endsWith(':') && !optionLine.match(/:\s*\d+$/))) {
+              i--;
+              break;
+            }
+            
+            // Formato: "    - 1 Character: 0"
+            const match = optionLine.match(/^-\s+(.+?):\s*(\d+)\s*$/);
+            if (match) {
+              options.push({
+                label: match[1].trim(),
+                value: parseInt(match[2])
+              });
+              i++;
+            } else if (optionLine.trim() === '') {
+              i++;
+              continue;
+            } else {
+              break;
+            }
+          }
+          
+          if (options.length > 0) {
+            selectors[selectorTitle] = options;
+          }
+        } else {
+          i++;
+        }
+      }
+      i--;
+      
+      if (Object.keys(selectors).length > 0) {
+        currentService.selectors = selectors;
+      }
     } else if (line.startsWith('- **Description**:')) {
       // Read description points
       i++;
