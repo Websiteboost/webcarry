@@ -3,7 +3,10 @@
 ---
 
 <a href="/" class="glitch-logo">
-  <span class="glitch-text" data-text="BATTLEBOOSTING">BATTLEBOOSTING</span>
+  <div class="logo-wrapper">
+    <span class="glitch-text" data-text="BATTLE">BATTLE</span>
+    <span class="glitch-text" data-text="BOOSTING">BOOSTING</span>
+  </div>
 </a>
 
 <style>
@@ -14,9 +17,17 @@
     z-index: 50;
   }
 
+  .logo-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+    line-height: 1;
+  }
+
   .glitch-text {
     font-family: 'Orbitron', 'Rajdhani', 'Press Start 2P', monospace, sans-serif;
-    font-size: 2.5rem;
+    font-size: 2rem;
     font-weight: 900;
     text-transform: uppercase;
     letter-spacing: 0.1em;
@@ -108,7 +119,15 @@
 
   @media (max-width: 640px) {
     .glitch-text {
+      font-size: 2rem;
+      letter-spacing: 0.08em;
+    }
+  }
+  
+  @media (max-width: 375px) {
+    .glitch-text {
       font-size: 1.75rem;
+      letter-spacing: 0.05em;
     }
   }
 </style>
