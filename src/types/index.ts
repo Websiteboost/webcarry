@@ -37,6 +37,15 @@ export interface BoxPriceItem {
   title?: string;
 }
 
+export interface SelectOption {
+  label: string;
+  value: number;
+}
+
+export interface Selectors {
+  [selectorTitle: string]: SelectOption[];
+}
+
 export interface Service {
   id: string;
   title: string;
@@ -44,10 +53,12 @@ export interface Service {
   price: number;
   image: string;
   categoryId: string;
+  games?: string[]; // IDs de los juegos donde está disponible este servicio
   barPrice?: BarPrice;
   boxPrice?: BoxPriceItem[];
   additionalServices?: Record<string, AdditionalOption>;
   customPrice?: CustomPrice;
+  selectors?: Selectors;
 }
 
 export interface PaymentMethod {

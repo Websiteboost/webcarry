@@ -4,6 +4,7 @@
 - **ID**: pl-1
 - **Title**: Level 1-50 Express
 - **Category**: power-leveling
+- **Games**: game-1, game-3
 - **Price**: 25
 - **Image**: /images/services/leveling-1.jpg
 - **BarPrice**:
@@ -33,6 +34,7 @@
 - **ID**: pl-2
 - **Title**: Max Level Premium
 - **Category**: power-leveling
+- **Games**: game-1, game-3
 - **Price**: 45
 - **Image**: /images/services/leveling-2.jpg
 - **BoxPrice**:
@@ -51,6 +53,7 @@
 - **ID**: rb-1
 - **Title**: Bronze to Gold
 - **Category**: ranked-boosting
+- **Games**: game-2, game-4
 - **Price**: 35
 - **Image**: /images/services/ranked-1.jpg
 - **BarPrice**:
@@ -76,6 +79,7 @@
 - **ID**: rb-2
 - **Title**: Platinum Package
 - **Category**: ranked-boosting
+- **Games**: game-2, game-4
 - **Price**: 65
 - **Image**: /images/services/ranked-2.jpg
 - **BoxPrice**:
@@ -93,6 +97,7 @@
 - **ID**: ah-1
 - **Title**: Achievement Bundle Basic
 - **Category**: achievement-hunting
+- **Games**: game-1, game-2, game-3, game-4
 - **Price**: 20
 - **Image**: /images/services/achievement-1.jpg
 - **BoxPrice**:
@@ -111,6 +116,7 @@
 - **ID**: ah-2
 - **Title**: 100% Completion
 - **Category**: achievement-hunting
+- **Games**: game-1, game-2, game-3, game-4
 - **Price**: 75
 - **Image**: /images/services/achievement-2.jpg
 - **BarPrice**:
@@ -141,6 +147,7 @@
 - **ID**: gf-1
 - **Title**: Epic Gear Set
 - **Category**: gear-farming
+- **Games**: game-1, game-3
 - **Price**: 30
 - **Image**: /images/services/gear-1.jpg
 - **BarPrice**:
@@ -170,6 +177,7 @@
 - **ID**: gf-2
 - **Title**: Legendary Weapons
 - **Category**: gear-farming
+- **Games**: game-1, game-3
 - **Price**: 50
 - **Image**: /images/services/gear-2.jpg
 - **BoxPrice**:
@@ -187,6 +195,7 @@
 - **ID**: dc-1
 - **Title**: Normal Dungeon Pack
 - **Category**: dungeon-carries
+- **Games**: game-1
 - **Price**: 15
 - **Image**: /images/services/dungeon-1.jpg
 - **CustomPrice**:
@@ -196,6 +205,13 @@
     - 10
     - 15
     - 25
+- **Selectors**:
+  - Choose number of characters:
+    - 1 Character: 0
+    - 2 Characters: 90
+    - 5 Characters: 375
+    - 6 Characters: 470
+    - 12 Characters: 1070
 - **Description**:
   - 5 normal dungeons
   - All loot reserved for you
@@ -205,6 +221,7 @@
 - **ID**: dc-2
 - **Title**: Mythic+ Bundle
 - **Category**: dungeon-carries
+- **Games**: game-1
 - **Price**: 55
 - **Image**: /images/services/dungeon-2.jpg
 - **BarPrice**:
@@ -230,6 +247,7 @@
 - **ID**: pvp-1
 - **Title**: PvP Basics
 - **Category**: pvp-training
+- **Games**: game-2, game-4
 - **Price**: 25
 - **Image**: /images/services/pvp-1.jpg
 - **CustomPrice**:
@@ -248,6 +266,7 @@
 - **ID**: pvp-2
 - **Title**: Arena Mastery
 - **Category**: pvp-training
+- **Games**: game-2
 - **Price**: 60
 - **Image**: /images/services/pvp-2.jpg
 - **CustomPrice**:
@@ -257,6 +276,17 @@
     - 60
     - 90
     - 120
+- **Selectors**:
+  - Select Difficulty:
+    - Beginner: 0
+    - Intermediate: 25
+    - Advanced: 50
+    - Expert: 85
+    - Master: 120
+  - Choose Arena Type:
+    - 2v2 Arena: 0
+    - 3v3 Arena: 35
+    - 5v5 Battleground: 45
 - **Description**:
   - Advanced arena training
   - Team strategies
@@ -266,6 +296,7 @@
 - **ID**: rc-1
 - **Title**: Normal Raid Clear
 - **Category**: raid-completion
+- **Games**: game-1, game-3
 - **Price**: 40
 - **Image**: /images/services/raid-1.jpg
 - **CustomPrice**:
@@ -284,6 +315,7 @@
 - **ID**: rc-2
 - **Title**: Heroic Full Clear
 - **Category**: raid-completion
+- **Games**: game-1, game-3
 - **Price**: 80
 - **Image**: /images/services/raid-2.jpg
 - **CustomPrice**:
@@ -293,6 +325,12 @@
     - 80
     - 100
     - 150
+- **Selectors**:
+  - Raid Group Size:
+    - 10 Players: 0
+    - 15 Players: 45
+    - 20 Players: 80
+    - 25 Players: 120
 - **Description**:
   - Full heroic raid
   - Mounts and titles included
@@ -302,6 +340,7 @@
 - **ID**: cc-1
 - **Title**: Appearance Makeover
 - **Category**: character-customization
+- **Games**: game-1, game-2, game-3, game-4
 - **Price**: 10
 - **Image**: /images/services/custom-1.jpg
 - **CustomPrice**:
@@ -320,6 +359,7 @@
 - **ID**: cc-2
 - **Title**: Premium Cosmetics
 - **Category**: character-customization
+- **Games**: game-1, game-2, game-3, game-4
 - **Price**: 35
 - **Image**: /images/services/custom-2.jpg
 - **CustomPrice**:

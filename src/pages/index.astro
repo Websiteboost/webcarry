@@ -106,34 +106,65 @@ for (const feature of home.features.items) {
 </MainLayout>
 
 <script>
-  // Script optimizado para agregar backdrop blur al logo cuando el título sale de vista
+  // Script optimizado para agregar backdrop blur al logo
   document.addEventListener('DOMContentLoaded', () => {
     const logoContainer = document.getElementById('home-logo-container');
     const header = document.getElementById('home-header');
     
     if (logoContainer && header) {
-      // Usar IntersectionObserver para mejor performance
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach(entry => {
-            if (!entry.isIntersecting) {
-              // Título fuera de vista: agregar backdrop blur
-              logoContainer.classList.add('backdrop-blur-md', 'bg-purple-dark/30', 'shadow-lg', 'shadow-purple-neon/10');
-              logoContainer.style.borderBottom = '1px solid rgba(168, 85, 247, 0.2)';
-            } else {
-              // Título visible: remover backdrop blur
-              logoContainer.classList.remove('backdrop-blur-md', 'bg-purple-dark/30', 'shadow-lg', 'shadow-purple-neon/10');
-              logoContainer.style.borderBottom = 'none';
-            }
-          });
-        },
-        {
-          threshold: 0,
-          rootMargin: '-100px 0px 0px 0px' // Trigger un poco antes de que salga completamente
-        }
-      );
+      const isMobile = window.innerWidth < 640;
       
-      observer.observe(header);
+      if (isMobile) {
+        // En mobile: detectar cualquier scroll
+        let ticking = false;
+        
+        const updateLogoOnScroll = () => {
+          const scrollY = window.scrollY || window.pageYOffset;
+          
+          if (scrollY > 1) {
+            // Con solo 1px de scroll, activar backdrop blur
+            logoContainer.classList.add('backdrop-blur-md', 'bg-purple-dark/30', 'shadow-lg', 'shadow-purple-neon/10');
+            logoContainer.style.borderBottom = '1px solid rgba(168, 85, 247, 0.2)';
+          } else {
+            // Sin scroll: remover backdrop blur
+            logoContainer.classList.remove('backdrop-blur-md', 'bg-purple-dark/30', 'shadow-lg', 'shadow-purple-neon/10');
+            logoContainer.style.borderBottom = 'none';
+          }
+          
+          ticking = false;
+        };
+        
+        window.addEventListener('scroll', () => {
+          if (!ticking) {
+            window.requestAnimationFrame(updateLogoOnScroll);
+            ticking = true;
+          }
+        }, { passive: true });
+        
+        // Verificar estado inicial
+        updateLogoOnScroll();
+      } else {
+        // En desktop: usar IntersectionObserver
+        const observer = new IntersectionObserver(
+          (entries) => {
+            entries.forEach(entry => {
+              if (!entry.isIntersecting) {
+                logoContainer.classList.add('backdrop-blur-md', 'bg-purple-dark/30', 'shadow-lg', 'shadow-purple-neon/10');
+                logoContainer.style.borderBottom = '1px solid rgba(168, 85, 247, 0.2)';
+              } else {
+                logoContainer.classList.remove('backdrop-blur-md', 'bg-purple-dark/30', 'shadow-lg', 'shadow-purple-neon/10');
+                logoContainer.style.borderBottom = 'none';
+              }
+            });
+          },
+          {
+            threshold: 0,
+            rootMargin: '-80px 0px 0px 0px'
+          }
+        );
+        
+        observer.observe(header);
+      }
     }
   });
 </script>

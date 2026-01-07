@@ -4,6 +4,7 @@ import IncrementalBar from './IncrementalBar';
 import CheckGroup from './CheckGroup';
 import BoxPrice from './BoxPrice';
 import Accordion from './Accordion';
+import CustomSelector from './CustomSelector';
 
 interface Props {
   service: Service | null;
@@ -23,6 +24,7 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
   const [barMaxValue, setBarMaxValue] = useState<number | null>(null);
   const [additionalValues, setAdditionalValues] = useState<number[]>([]);
   const [boxValues, setBoxValues] = useState<number[]>([]);
+  const [selectorValues, setSelectorValues] = useState<Record<string, number>>({});
 
   // Todos los hooks deben estar antes de cualquier return condicional
   const handleBarValueChange = useCallback((minValue: number, maxValue: number) => {
@@ -36,6 +38,13 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
 
   const handleBoxPriceChange = useCallback((values: number[]) => {
     setBoxValues(values);
+  }, []);
+
+  const handleSelectorChange = useCallback((selectorId: string, value: number) => {
+    setSelectorValues(prev => ({
+      ...prev,
+      [selectorId]: value
+    }));
   }, []);
 
   useEffect(() => {
@@ -131,7 +140,10 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
     // Sumar valores adicionales
     const additionalTotal = additionalValues.reduce((sum, value) => sum + value, 0);
     
-    return basePrice + additionalTotal;
+    // Sumar valores de selectores
+    const selectorTotal = Object.values(selectorValues).reduce((sum, value) => sum + value, 0);
+    
+    return basePrice + additionalTotal + selectorTotal;
   };
 
   const handlePayment = () => {
@@ -169,11 +181,11 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
       {/* Sidebar */}
       {isOpen && (
         <aside 
-          className={`fixed top-0 right-0 h-full w-full sm:w-120 glass-effect border-l border-purple-neon/30 z-40 lg:z-50 overflow-y-auto transition-transform duration-300 ease-in-out ${
+          className={`fixed top-0 lg:top-24 right-0 h-full lg:h-[calc(100vh-6rem)] w-full sm:w-120 glass-effect border-l border-purple-neon/30 z-40 lg:z-50 overflow-y-auto transition-transform duration-300 ease-in-out ${
             isVisible ? 'translate-x-0' : 'translate-x-full'
           }`}
         >
-        <div className="p-6 pb-32 sm:pb-6 pt-20 lg:pt-6">
+        <div className="p-6 pb-32 sm:pb-6 pt-40 lg:pt-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-pink-neon neon-text">Checkout</h2>
@@ -293,6 +305,21 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
                 />
               </div>
             </div>
+          )}
+
+          {/* Custom Selectors - Si el servicio tiene selectors */}
+          {service.selectors && Object.keys(service.selectors).length > 0 && (
+            <>
+              {Object.entries(service.selectors).map(([title, options], index) => (
+                <CustomSelector
+                  key={`${service.id}-selector-${index}`}
+                  selectorId={`${service.id}-selector-${index}`}
+                  title={title}
+                  options={options}
+                  onValueChange={(value) => handleSelectorChange(`${service.id}-selector-${index}`, value)}
+                />
+              ))}
+            </>
           )}
 
           {/* Additional Services CheckGroup */}

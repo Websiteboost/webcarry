@@ -85,23 +85,62 @@ src/
 
 ## 📝 Configuración de Contenido
 
-Todo el contenido se gestiona desde `src/content/config.md`. Este archivo permite:
+Todo el contenido se gestiona desde archivos Markdown en `src/content/`. Estos archivos permiten:
 
 - ✅ Editar textos del home (título, subtítulo, categorías)
 - ✅ Agregar/editar/eliminar juegos
 - ✅ Agregar/editar/eliminar categorías de servicios
 - ✅ Agregar/editar/eliminar servicios individuales
-- ✅ Configurar precios
+- ✅ Configurar precios (fijos, barras, boxes, custom, selectors)
 - ✅ URLs de imágenes
 
-### Ejemplo de Edición
+### Vinculación Juego-Servicio
+
+Los servicios pueden vincularse a juegos específicos usando el campo `**Games**`:
 
 ```markdown
-### Juego 5
-- **ID**: game-5
-- **Título**: Shadow Realms
-- **Categoría**: Action RPG
-- **Imagen**: /images/games/shadow-realms.jpg
+## Heroic Full Clear
+- **ID**: rc-2
+- **Title**: Heroic Full Clear
+- **Category**: raid-completion
+- **Games**: game-1, game-3  # ← Solo aparece en estos juegos
+- **Price**: 80
+```
+
+- Si no se especifica `**Games**`, el servicio aparece en **todos** los juegos
+- Para múltiples juegos, separa los IDs con comas: `game-1, game-2, game-3`
+- Esto permite mostrar servicios relevantes por tipo de juego (MMO, MOBA, FPS, RPG)
+
+### Tipos de Precios Disponibles
+
+```markdown
+# Precio con barra deslizable
+- **BarPrice**:
+  - InitValue: 1
+  - FinalValue: 50
+  - Step: 1
+  - Label: Select Level
+
+# Precio con opciones predefinidas
+- **BoxPrice**:
+  - Basic: 10
+  - Standard: 20
+  - Premium: 45
+
+# Precio personalizable
+- **CustomPrice**:
+  - Label: Enter Amount
+  - Presets:
+    - 10
+    - 25
+    - 50
+
+# Selectores con precio adicional
+- **Selectors**:
+  - Raid Group Size:
+    - 10 Players: 0
+    - 15 Players: 45
+    - 20 Players: 80
 ```
 
 ## 🚀 Comandos
