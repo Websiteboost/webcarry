@@ -208,4 +208,6 @@ Todos los componentes validan datos antes de renderizar:
 
 ## 📄 Licencia
 
-Proyecto creado para AzanoRivers © 2026
+Proyecto propietario creado por [AzanoRivers](https://azanorivers.com) © 2026
+
+Todos los derechos reservados. Consulta el archivo [LICENSE](LICENSE) para más detalles.
