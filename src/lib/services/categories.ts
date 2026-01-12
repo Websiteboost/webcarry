@@ -83,3 +83,48 @@ export async function getCategoriesWithServices(): Promise<CategoryWithServices[
   
   return categoriesWithServices;
 }
+
+/**
+ * Obtiene categorías con servicios filtradas por juego
+ * Solo devuelve categorías que tienen servicios disponibles para el juego especificado
+ */
+export async function getCategoriesWithServicesByGame(gameId: string): Promise<CategoryWithServices[]> {
+  // Obtener todas las categorías que tienen relación con el juego
+  const categoryRows = await sql`
+    SELECT DISTINCT c.id, c.name, c.description, c.icon, c.created_at
+    FROM categories c
+    INNER JOIN category_games cg ON c.id = cg.category_id
+    WHERE cg.game_id = ${gameId}
+    ORDER BY c.created_at ASC
+  `;
+  
+  // Para cada categoría, obtener solo los servicios que están disponibles para este juego
+  const categoriesWithServices = await Promise.all(
+    categoryRows.map(async (category) => {
+      const services = await sql`
+        SELECT DISTINCT s.id, s.title, s.price, s.image, s.created_at
+        FROM services s
+        INNER JOIN service_games sg ON s.id = sg.service_id
+        WHERE s.category_id = ${category.id}
+          AND sg.game_id = ${gameId}
+        ORDER BY s.created_at ASC
+      `;
+      
+      return {
+        id: category.id as string,
+        name: category.name as string,
+        description: category.description as string,
+        icon: category.icon as string,
+        services: services.map(s => ({
+          id: s.id as string,
+          title: s.title as string,
+          price: s.price as number,
+          image: s.image as string,
+        })),
+      };
+    })
+  );
+  
+  // Filtrar categorías que no tienen servicios para este juego
+  return categoriesWithServices.filter(cat => cat.services.length > 0);
+}

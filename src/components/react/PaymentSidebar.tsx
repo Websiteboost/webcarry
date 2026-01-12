@@ -159,7 +159,7 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
     <>
       {/* Overlay */}
       <div 
-        className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity duration-300 ${
+        className={`fixed top-0 left-0 w-screen h-screen bg-black/60 backdrop-blur-sm z-40 transition-opacity duration-300 ${
           isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
         onClick={onClose}
@@ -168,8 +168,8 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
       {/* Desktop Accordion - Centered Left on Overlay */}
       {isOpen && (
         <div className="hidden lg:block fixed left-0 top-0 bottom-0 right-0 z-45 pointer-events-none">
-          <div className="flex items-center justify-center h-full pr-125 xl:pr-155 pl-20 py-32">
-            <div className="pointer-events-auto w-full max-w-3xl max-h-[calc(100vh-16rem)] overflow-y-auto">
+          <div className="flex items-center justify-center h-full pr-125 xl:pr-155 pl-20 py-16 pt-48">
+            <div className="pointer-events-auto w-full max-w-3xl max-h-[calc(100vh-8rem)] overflow-y-auto">
               <div className="glass-effect rounded-lg p-6 border border-purple-neon/30 shadow-2xl">
                 <Accordion content={accordionContent} />
               </div>

@@ -6,6 +6,7 @@
 
 DROP TABLE IF EXISTS service_prices CASCADE;
 DROP TABLE IF EXISTS service_games CASCADE;
+DROP TABLE IF EXISTS category_games CASCADE;
 DROP TABLE IF EXISTS services CASCADE;
 DROP TABLE IF EXISTS categories CASCADE;
 DROP TABLE IF EXISTS games CASCADE;
@@ -28,6 +29,10 @@ CREATE TABLE IF NOT EXISTS games (id VARCHAR(50) PRIMARY KEY,title VARCHAR(255) 
 CREATE INDEX idx_games_category ON games(category);
 
 CREATE TABLE IF NOT EXISTS categories (id VARCHAR(100) PRIMARY KEY,name VARCHAR(255) NOT NULL,description TEXT NOT NULL,icon VARCHAR(50) NOT NULL,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+
+CREATE TABLE IF NOT EXISTS category_games (category_id VARCHAR(100) NOT NULL,game_id VARCHAR(50) NOT NULL,PRIMARY KEY (category_id,game_id),FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE,FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE);
+CREATE INDEX idx_category_games_category_id ON category_games(category_id);
+CREATE INDEX idx_category_games_game_id ON category_games(game_id);
 
 CREATE TABLE IF NOT EXISTS services (id VARCHAR(50) PRIMARY KEY,title VARCHAR(255) NOT NULL,category_id VARCHAR(100) NOT NULL,price DECIMAL(10,2) NOT NULL,image TEXT NOT NULL,description TEXT[] NOT NULL,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE RESTRICT);
 CREATE INDEX idx_services_category_id ON services(category_id);
@@ -53,7 +58,7 @@ CREATE INDEX idx_home_features_order ON home_features(display_order);
 
 CREATE TABLE IF NOT EXISTS payment_methods (id UUID PRIMARY KEY DEFAULT gen_random_uuid(),name VARCHAR(100) NOT NULL,icon VARCHAR(50) NOT NULL,type VARCHAR(50) NOT NULL,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
 
-CREATE TABLE IF NOT EXISTS site_config (id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),home_title VARCHAR(255) NOT NULL,home_subtitle TEXT NOT NULL,home_categories TEXT[] NOT NULL,footer_payment_title VARCHAR(255) NOT NULL,footer_copyright TEXT NOT NULL,updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS site_config (id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),home_title VARCHAR(255) NOT NULL,home_subtitle TEXT NOT NULL,home_categories TEXT[] NOT NULL,accordion_title VARCHAR(255) NOT NULL DEFAULT 'Frequently Asked Questions',footer_payment_title VARCHAR(255) NOT NULL,footer_copyright TEXT NOT NULL,updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
 CREATE TRIGGER update_site_config_updated_at BEFORE UPDATE ON site_config FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================================================
@@ -78,6 +83,34 @@ INSERT INTO categories (id,name,description,icon) VALUES
 ('pvp-training','PvP Training','Learn advanced PvP techniques and strategies from professional players','Sword'),
 ('raid-completion','Raid Completion','Full raid clears with experienced teams, including all bosses and exclusive rewards','Users'),
 ('character-customization','Character Customization','Transform your character with premium cosmetics, skins and exclusive appearance items','Palette');
+
+-- ============================================================================
+-- PARTE 2.5: RELACIONES CATEGORÍA-JUEGO
+-- ============================================================================
+-- Ejecuta esta parte después de categorías y juegos
+-- Define qué categorías están disponibles en qué juegos
+-- ============================================================================
+
+INSERT INTO category_games (category_id,game_id) VALUES 
+('power-leveling','game-1'),
+('power-leveling','game-3'),
+('ranked-boosting','game-2'),
+('ranked-boosting','game-4'),
+('achievement-hunting','game-1'),
+('achievement-hunting','game-2'),
+('achievement-hunting','game-3'),
+('achievement-hunting','game-4'),
+('gear-farming','game-1'),
+('gear-farming','game-3'),
+('dungeon-carries','game-1'),
+('pvp-training','game-2'),
+('pvp-training','game-4'),
+('raid-completion','game-1'),
+('raid-completion','game-3'),
+('character-customization','game-1'),
+('character-customization','game-2'),
+('character-customization','game-3'),
+('character-customization','game-4');
 
 -- ============================================================================
 -- PARTE 3: SERVICIOS
@@ -225,5 +258,5 @@ INSERT INTO payment_methods (name,icon,type) VALUES
 ('PayPal','paypal','paypal'),
 ('Visa/Mastercard','credit-card','card');
 
-INSERT INTO site_config (id,home_title,home_subtitle,home_categories,footer_payment_title,footer_copyright) VALUES 
-(1,'BattleBoosting Gaming Services','Your trusted platform for professional gaming services',ARRAY['MMO Boosting','Ranked Services','Power Leveling','Achievement Hunting'],'Accepted payment methods','© 2025 BattleBoosting. All rights reserved.');
+INSERT INTO site_config (id,home_title,home_subtitle,home_categories,accordion_title,footer_payment_title,footer_copyright) VALUES 
+(1,'BattleBoosting Gaming Services','Your trusted platform for professional gaming services',ARRAY['MMO Boosting','Ranked Services','Power Leveling','Achievement Hunting'],'Frequently Asked Questions','Accepted payment methods','© 2025 BattleBoosting. All rights reserved.');

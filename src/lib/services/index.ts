@@ -7,7 +7,7 @@
 export { getAllGames, getGameById, getGamesByCategory } from './games';
 
 // Categories
-export { getAllCategories, getCategoryById, getCategoriesWithServices } from './categories';
+export { getAllCategories, getCategoryById, getCategoriesWithServices, getCategoriesWithServicesByGame } from './categories';
 
 // Services
 export { 

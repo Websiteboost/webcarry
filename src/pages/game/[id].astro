@@ -10,7 +10,8 @@ import BackgroundLogo from '../../components/astro/BackgroundLogo.astro';
 import { 
   getSiteContent, 
   getGameById, 
-  getServicesByGame
+  getServicesByGame,
+  getCategoriesWithServicesByGame
 } from '../../lib/services';
 
 // Modo SSR dinámico - consulta DB en cada request
@@ -24,9 +25,12 @@ if (!game) {
 // Obtener servicios específicos de este juego desde la DB
 const gameServices = await getServicesByGame(game.id);
 
-// Obtener categorías y accordion para la UI
+// Obtener categorías filtradas por este juego con sus servicios
+const gameCategories = await getCategoriesWithServicesByGame(game.id);
+
+// Obtener accordion para la UI
 const siteContent = await getSiteContent();
-const { categories, accordion } = siteContent;
+const { accordion } = siteContent;
 
 const breadcrumbPath = [
   { name: 'Home', url: '/' },
@@ -44,7 +48,7 @@ const breadcrumbPath = [
   </div>
   
   <!-- Mobile Menu -->
-  <MobileMenu client:load categories={categories as any} />
+  <MobileMenu client:load categories={gameCategories as any} />
 
   <main class="min-h-screen pt-24 pb-8 relative">
     <!-- Background BB Watermark -->
@@ -55,7 +59,7 @@ const breadcrumbPath = [
       <div class="flex flex-col lg:flex-row min-h-screen">
         <!-- Sidebar (Desktop) - Full Height -->
         <div class="hidden lg:block lg:w-80 shrink-0">
-          <CategorySidebar client:load categories={categories as any} />
+          <CategorySidebar client:load categories={gameCategories as any} />
         </div>
 
         <!-- Content Area with more spacing -->
