@@ -13,6 +13,7 @@ export default function ServiceGrid({ initialServices, accordionContent, onServi
   const [loading, setLoading] = useState(true);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     // Simular carga asíncrona
@@ -74,8 +75,22 @@ export default function ServiceGrid({ initialServices, accordionContent, onServi
           className="glass-effect rounded-md overflow-hidden border border-purple-neon/20 card-hover group"
         >
           {/* Service Image with Gradient */}
-          <div className="relative h-48 w-full overflow-hidden">
-            <div className="skeleton h-full w-full group-hover:scale-110 transition-transform duration-300"></div>
+          <div className="relative h-48 w-full overflow-hidden bg-linear-to-br from-purple-neon/20 to-blue-neon/20">
+            {imageErrors[service.id] ? (
+              <div className="h-full w-full flex items-center justify-center">
+                <svg className="w-16 h-16 text-purple-neon/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+            ) : (
+              <img 
+                src={service.image} 
+                alt={service.title}
+                className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-300"
+                loading="lazy"
+                onError={() => setImageErrors(prev => ({ ...prev, [service.id]: true }))}
+              />
+            )}
             {/* Gradient Overlay */}
             <div className="absolute inset-0 bg-linear-to-b from-transparent via-purple-dark/60 to-purple-dark"></div>
             {/* Service Title on Image */}

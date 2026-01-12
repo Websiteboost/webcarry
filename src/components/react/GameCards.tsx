@@ -8,6 +8,7 @@ interface Props {
 export default function GameCards({ initialGames }: Props) {
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     // Simular carga asíncrona
@@ -47,7 +48,21 @@ export default function GameCards({ initialGames }: Props) {
         >
           {/* Game Image */}
           <div className="relative h-64 w-full overflow-hidden bg-linear-to-br from-purple-neon/20 to-blue-neon/20">
-            <div className="skeleton h-full w-full group-hover:scale-110 transition-transform duration-300"></div>
+            {imageErrors[game.id] ? (
+              <div className="h-full w-full flex items-center justify-center">
+                <svg className="w-20 h-20 text-purple-neon/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+            ) : (
+              <img 
+                src={game.image} 
+                alt={game.title}
+                className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-300"
+                loading="lazy"
+                onError={() => setImageErrors(prev => ({ ...prev, [game.id]: true }))}
+              />
+            )}
             {/* Overlay gradient */}
             <div className="absolute inset-0 bg-linear-to-t from-purple-dark via-transparent to-transparent opacity-60"></div>
           </div>
