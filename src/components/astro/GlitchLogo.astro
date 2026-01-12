@@ -1,11 +1,18 @@
 ---
 // Logo component with glitch effect
+interface Props {
+  logoText?: string;
+}
+
+const { logoText = 'BATTLE BOOSTING' } = Astro.props;
+const logoLines = logoText.split(' ');
 ---
 
 <a href="/" class="glitch-logo">
   <div class="logo-wrapper">
-    <span class="glitch-text" data-text="BATTLE">BATTLE</span>
-    <span class="glitch-text" data-text="BOOSTING">BOOSTING</span>
+    {logoLines.map((text) => (
+      <span class="glitch-text" data-text={text}>{text}</span>
+    ))}
   </div>
 </a>
 

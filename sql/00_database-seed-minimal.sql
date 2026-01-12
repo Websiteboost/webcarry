@@ -58,7 +58,7 @@ CREATE INDEX idx_home_features_order ON home_features(display_order);
 
 CREATE TABLE IF NOT EXISTS payment_methods (id UUID PRIMARY KEY DEFAULT gen_random_uuid(),name VARCHAR(100) NOT NULL,icon VARCHAR(50) NOT NULL,type VARCHAR(50) NOT NULL,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
 
-CREATE TABLE IF NOT EXISTS site_config (id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),home_title VARCHAR(255) NOT NULL,home_subtitle TEXT NOT NULL,home_categories TEXT[] NOT NULL,logo_text VARCHAR(255) NOT NULL DEFAULT 'BATTLE BOOSTING',accordion_title VARCHAR(255) NOT NULL DEFAULT 'Frequently Asked Questions',footer_payment_title VARCHAR(255) NOT NULL,footer_copyright TEXT NOT NULL,disclaimer TEXT NOT NULL DEFAULT 'All services are provided for entertainment purposes only. We are not affiliated with or endorsed by any game developers or publishers.',updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS site_config (id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),home_title VARCHAR(255) NOT NULL,home_subtitle TEXT NOT NULL,home_categories TEXT[] NOT NULL,logo_text VARCHAR(255) NOT NULL DEFAULT 'BATTLE BOOSTING',accordion_title VARCHAR(255) NOT NULL DEFAULT 'Frequently Asked Questions',footer_payment_title VARCHAR(255) NOT NULL,footer_copyright TEXT NOT NULL,updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
 CREATE TRIGGER update_site_config_updated_at BEFORE UPDATE ON site_config FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================================================
@@ -264,5 +264,5 @@ INSERT INTO payment_methods (name,icon,type) VALUES
 ('PayPal','paypal','paypal'),
 ('Visa/Mastercard','credit-card','card');
 
-INSERT INTO site_config (id,home_title,home_subtitle,home_categories,logo_text,accordion_title,footer_payment_title,footer_copyright,disclaimer) VALUES 
-(1,'BattleBoosting Gaming Services','Your trusted platform for professional gaming services',ARRAY['MMO Boosting','Ranked Services','Power Leveling','Achievement Hunting'],'BATTLE BOOSTING','Frequently Asked Questions','Accepted payment methods','© 2025 BattleBoosting. All rights reserved.','All services are provided for entertainment purposes only. We are not affiliated with or endorsed by any game developers or publishers. Account security is our top priority, and we use industry-standard protection measures. By using our services, you acknowledge that you have read and agree to our terms of service and privacy policy.');
+INSERT INTO site_config (id,home_title,home_subtitle,home_categories,logo_text,accordion_title,footer_payment_title,footer_copyright) VALUES 
+(1,'BattleBoosting Gaming Services','Your trusted platform for professional gaming services',ARRAY['MMO Boosting','Ranked Services','Power Leveling','Achievement Hunting'],'BATTLE BOOSTING','Frequently Asked Questions','Accepted payment methods','© 2025 BattleBoosting. All rights reserved.');

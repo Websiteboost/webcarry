@@ -30,7 +30,7 @@ const gameCategories = await getCategoriesWithServicesByGame(game.id);
 
 // Obtener accordion para la UI
 const siteContent = await getSiteContent();
-const { accordion } = siteContent;
+const { accordion, home } = siteContent;
 
 const breadcrumbPath = [
   { name: 'Home', url: '/' },
@@ -43,7 +43,7 @@ const breadcrumbPath = [
   <!-- Logo: top-right inicial en mobile, bottom-left con scroll; top-left sticky en desktop -->
   <div id="game-logo" class="fixed top-6 right-6 z-50 p-3 sm:sticky sm:top-0 sm:left-0 sm:right-auto sm:p-6">
     <div class="transition-all duration-700 ease-in-out opacity-100">
-      <GlitchLogo />
+      <GlitchLogo logoText={home.logoText} />
     </div>
   </div>
   

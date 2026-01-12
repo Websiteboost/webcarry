@@ -11,6 +11,7 @@ export interface PaymentMethod {
 export interface Footer {
   paymentMethodsTitle: string;
   copyrightText: string;
+  disclaimer: string;
   paymentMethods: PaymentMethod[];
 }
 
@@ -20,7 +21,7 @@ export interface Footer {
 export async function getFooterContent(): Promise<Footer> {
   // Obtener site_config para los textos
   const configRows = await sql`
-    SELECT footer_payment_title, footer_copyright
+    SELECT footer_payment_title, footer_copyright, disclaimer
     FROM site_config
     WHERE id = 1
     LIMIT 1
@@ -42,6 +43,7 @@ export async function getFooterContent(): Promise<Footer> {
   return {
     paymentMethodsTitle: config.footer_payment_title,
     copyrightText: config.footer_copyright,
+    disclaimer: config.disclaimer || 'All services are provided for entertainment purposes only.',
     paymentMethods: paymentRows.map(row => ({
       name: row.name,
       type: row.type as 'paypal' | 'card',
