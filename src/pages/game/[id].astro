@@ -10,20 +10,10 @@ import BackgroundLogo from '../../components/astro/BackgroundLogo.astro';
 import { 
   getSiteContent, 
   getGameById, 
-  getServicesByGame,
-  getAllGames 
+  getServicesByGame
 } from '../../lib/services';
 
-export const prerender = true;
-
-export async function getStaticPaths() {
-  const games = await getAllGames();
-  return games.map((game) => ({
-    params: { id: game.id },
-    props: { game }
-  }));
-}
-
+// Modo SSR dinámico - consulta DB en cada request
 const { id } = Astro.params;
 const game = await getGameById(id as string);
 
