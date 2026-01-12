@@ -11,7 +11,7 @@ export async function getAllGames(): Promise<Game[]> {
   const rows = await sql`
     SELECT id, title, category, image, created_at
     FROM games
-    ORDER BY created_at ASC
+    ORDER BY id ASC
   `;
   
   return rows.map(row => ({
@@ -52,7 +52,7 @@ export async function getGamesByCategory(category: string): Promise<Game[]> {
     SELECT id, title, category, image, created_at
     FROM games
     WHERE category = ${category}
-    ORDER BY created_at ASC
+    ORDER BY id ASC
   `;
   
   return rows.map(row => ({
