@@ -68,6 +68,12 @@ CREATE TRIGGER update_site_config_updated_at BEFORE UPDATE ON site_config FOR EA
 -- Inserta los juegos y categorías (datos fundamentales)
 -- ============================================================================
 
+-- Usuario administrador por defecto
+-- Email: admin@battleboost.com
+-- Password: Admin123!
+INSERT INTO users (id,email,password_hash,role) VALUES 
+('admin_default_user_1','admin@battleboost.com','$2b$10$eJQMEYnprXM16upaeFrN4OfkYZfbSdEUkoypbJMTlHy3pSVjZDpLS','admin');
+
 INSERT INTO games (id,title,category,image) VALUES 
 ('game-1','Nexus Warriors','MMO','/images/games/nexus-warriors.jpg'),
 ('game-2','Void Legends','MOBA','/images/games/void-legends.jpg'),
