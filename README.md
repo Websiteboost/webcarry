@@ -1,46 +1,48 @@
 # BattleBoosting - Gaming Services Platform
 
-Plataforma web para servicios gaming profesionales construida con Astro SSR, React, TypeScript y Tailwind CSS 4+.
+Plataforma web para servicios gaming profesionales con SSR dinámico, base de datos PostgreSQL y diseño cyberpunk.
 
-## 🚀 Tecnologías
+## 🚀 Stack
 
-- **Astro v5.16.4** - Framework web con SSR
-- **React v19.2.3** - Componentes de cliente interactivos
+- **Astro v5.16.5** - Framework web con SSR dinámico
+- **React v19.2.3** - Componentes interactivos (client:load)
 - **TypeScript** - Tipado estricto
-- **Tailwind CSS v4.1.18** - Estilos con tema cyberpunk neón
-- **pnpm** - Gestor de paquetes
+- **Tailwind CSS v4.1.18** - Estilos cyberpunk neón
+- **PostgreSQL (Neon)** - Base de datos serverless
+- **Vercel** - Hosting con edge functions
 
 ## 📁 Estructura del Proyecto
 
 ```
 src/
 ├── components/
-│   ├── astro/              # Componentes estáticos de Astro
-│   │   ├── Footer.astro
-│   │   ├── CategoryBadges.astro
-│   │   └── Breadcrumb.astro
-│   └── react/              # Componentes interactivos de React
+│   ├── astro/              # Componentes Astro (Footer, Breadcrumb, Logos)
+│   └── react/              # Componentes React interactivos
 │       ├── GameCards.tsx
-│       ├── CategorySidebar.tsx
 │       ├── ServiceGrid.tsx
 │       ├── PaymentSidebar.tsx
+│       ├── CategorySidebar.tsx
 │       └── MobileMenu.tsx
-├── content/                # Configuración de contenido
-│   ├── config.md           # Archivo editable con todos los textos
-│   ├── categories/
-│   └── services/
+├── lib/
+│   ├── db.ts               # Conexión Neon PostgreSQL
+│   └── services/           # Queries modulares por tabla
+│       ├── games.ts
+│       ├── services.ts
+│       ├── categories.ts
+│       ├── home.ts
+│       ├── footer.ts
+│       ├── accordion.ts
+│       └── index.ts
 ├── layouts/
-│   └── MainLayout.astro    # Layout principal
+│   └── MainLayout.astro
 ├── pages/
-│   ├── index.astro         # Página de inicio
+│   ├── index.astro         # Home (SSR dinámico)
 │   └── game/
-│       └── [id].astro      # Página de servicios por juego
+│       └── [id].astro      # Servicios por juego (SSR dinámico)
 ├── styles/
-│   └── global.css          # Estilos globales y tema cyberpunk
-├── types/
-│   └── index.ts            # Tipos TypeScript
-└── utils/
-    └── content-parser.ts   # Parser del archivo config.md
+│   └── global.css          # Tema cyberpunk + animaciones
+└── types/
+    └── index.ts            # Interfaces TypeScript
 ```
 
 ## 🎨 Características del Diseño
@@ -82,65 +84,45 @@ src/
 - Checkbox de aceptación de políticas
 - Botones de métodos de pago (PayPal y Tarjeta)
 - Total y botón de pago
+�️ Base de Datos
 
-## 📝 Configuración de Contenido
+**PostgreSQL en Neon** (serverless, pooled connections)
 
-Todo el contenido se gestiona desde archivos Markdown en `src/content/`. Estos archivos permiten:
-
-- ✅ Editar textos del home (título, subtítulo, categorías)
-- ✅ Agregar/editar/eliminar juegos
-- ✅ Agregar/editar/eliminar categorías de servicios
-- ✅ Agregar/editar/eliminar servicios individuales
-- ✅ Configurar precios (fijos, barras, boxes, custom, selectors)
-- ✅ URLs de imágenes
-
-### Vinculación Juego-Servicio
-
-Los servicios pueden vincularse a juegos específicos usando el campo `**Games**`:
-
-```markdown
-## Heroic Full Clear
-- **ID**: rc-2
-- **Title**: Heroic Full Clear
-- **Category**: raid-completion
-- **Games**: game-1, game-3  # ← Solo aparece en estos juegos
-- **Price**: 80
+### Conexión
+```typescript
+// src/lib/db.ts
+import { neon } from '@neondatabase/serverless';
+const DATABASE_URL = import.meta.env.DATABASE_URL;
+export const sql = neon(DATABASE_URL);
 ```
 
-- Si no se especifica `**Games**`, el servicio aparece en **todos** los juegos
-- Para múltiples juegos, separa los IDs con comas: `game-1, game-2, game-3`
-- Esto permite mostrar servicios relevantes por tipo de juego (MMO, MOBA, FPS, RPG)
+### Schema (11 tablas)
+- `games` - 4 juegos (MMO, MOBA, RPG, FPS)
+- `categories` - 8 categorías de servicios
+- `services` - 16 servicios con descripciones
+- `service_games` - Relación many-to-many
+- `service_prices` - Configs de precio en JSONB (bar, box, custom, selectors)
+- `accordion_items` - FAQ (15 items)
+- `home_features` - Features del home
+- `payment_methods` - Métodos de pago
+- `site_config` - Configuración global (singleton)
+- `users`, `sessions` - Autenticación (futuro)
 
-### Tipos de Precios Disponibles
+### Uso en páginas
+```typescript
+import { getSiteContent, getServicesByGame } from '../lib/services';
 
-```markdown
-# Precio con barra deslizable
-- **BarPrice**:
-  - InitValue: 1
-  - FinalValue: 50
-  - Step: 1
-  - Label: Select Level
+const { home, games } = await getSiteContent();
+const services = await getServicesByGame('game-1');
+```
 
-# Precio con opciones predefinidas
-- **BoxPrice**:
-  - Basic: 10
-  - Standard: 20
-  - Premium: 45
+### Seed Database
+```bash
+# Ejecutar en Neon SQL Editor (7 partes)
+# Ver: database-seed-minimal.sql
+```
 
-# Precio personalizable
-- **CustomPrice**:
-  - Label: Enter Amount
-  - Presets:
-    - 10
-    - 25
-    - 50
-
-# Selectores con precio adicional
-- **Selectors**:
-  - Raid Group Size:
-    - 10 Players: 0
-    - 15 Players: 45
-    - 20 Players: 80
+📖 Ver [DATABASE-ARCHITECTURE.md](DATABASE-ARCHITECTURE.md) para detalles del esquema. - 20 Players: 80
 ```
 
 ## 🚀 Comandos
@@ -166,44 +148,30 @@ pnpm preview
 - **Conexión**: Variables automáticas desde integración Vercel + Neon
 - **Driver**: `@neondatabase/serverless` con pooling
 - **Servicios**: `src/lib/services/*.ts` - Queries modulares
-- **Seed**: `database-seed-minimal.sql` (7 partes ejecutables)
-
-```typescript
-// Ejemplo de uso en páginas Astro
-import { getSiteContent, getServicesByGame } from '../lib/services';
-
-const { home, games } = await getSiteContent();
+pnpm install   # Instalar dependencias
+pnpm dev       # Desarrollo (localhost:4321)
+pnpm build     # Build producción
+pnpm preview   # Preview build local
 ```
 
-Ver [DATABASE-ARCHITECTURE.md](DATABASE-ARCHITECTURE.md) para detalles del esquema.
+## ⚙️ Variables de Entorno
 
-## 🌐 SSR (Server-Side Rendering)
+```env
+# .env.local
+DATABASE_URL=postgresql://user:pass@host/dbname
+```
 
-El proyecto está configurado con SSR usando `@astrojs/node` en modo standalone:
+Variable auto-sync desde integración Vercel + Neon.
 
-- Renderizado del lado del servidor para mejor SEO
-- Componentes React con hidratación (`client:load`)
-- Rutas dinámicas generadas estáticamente en build time
+## 🌐 SSR Dinámico
 
-## 📱 Responsive Design
+**Modo**: Server-Side Rendering en cada request
 
-### Breakpoints
-- **Mobile**: < 640px (1 columna)
-- **Tablet**: 640px - 1024px (2 columnas)
-- **Desktop**: > 1024px (3-4 columnas)
-
-### Características Mobile
-- Menú hamburguesa para categorías
-- Sidebars deslizables
-- Ajuste de tipografías
-- Optimización de imágenes skeleton
-
-## 🎯 Componentes React Asíncronos
-
-Todos los componentes React implementan loading skeleton:
-
-1. Estado de carga inicial
-2. Skeleton con animación de shimmer
+- ✅ Consulta DB en tiempo real (sin prerender)
+- ✅ Contenido actualizado sin redeploy
+- ✅ SEO optimizado con meta tags dinámicos
+- ✅ Componentes React hidratados con `client:load`
+- ⚡ Respuesta típica: 50-200ms (Neon edge + Vercel)
 3. Carga de datos simulada (setTimeout)
 4. Renderizado final con datos reales
 
@@ -221,11 +189,12 @@ Todos los componentes React implementan loading skeleton:
 
 Todos los componentes validan datos antes de renderizar:
 - Verificación de arrays vacíos
-- Validación de props requeridas
-- Fallbacks para contenido faltante
+- ValiTema Cyberpunk
 
-## 📄 Licencia
-
-Proyecto propietario creado por [AzanoRivers](https://azanorivers.com) © 2026
-
-Todos los derechos reservados. Consulta el archivo [LICENSE](LICENSE) para más detalles.
+**Efectos CSS custom**:
+- `.neon-text` - Texto con glow neón
+- `.neon-border` - Bordes luminosos
+- `.glass-effect` - Glassmorphism con blur
+- `.skeleton` - Loading shimmer
+- Degradados púrpura/azul/rosa
+- Animaciones de pulso y hover
