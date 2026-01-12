@@ -20,6 +20,9 @@ export interface BarPrice {
   label?: string;
 }
 
+// Alias para uso en database services
+export type BarPriceConfig = BarPrice;
+
 export interface AdditionalOption {
   type: string;
   value: number;
@@ -31,6 +34,9 @@ export interface CustomPrice {
   label?: string;
   presets?: number[];
 }
+
+// Alias para uso en database services
+export type CustomPriceConfig = CustomPrice;
 
 export interface BoxPriceItem {
   value: number;
@@ -45,6 +51,9 @@ export interface SelectOption {
 export interface Selectors {
   [selectorTitle: string]: SelectOption[];
 }
+
+// Alias para uso en database services
+export type SelectorConfig = Selectors;
 
 export interface Service {
   id: string;

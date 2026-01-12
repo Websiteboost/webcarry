@@ -1,8 +1,7 @@
 ---
-import { getSiteContent } from '../../utils/content-parser';
+import { getFooterContent } from '../../lib/services';
 
-const siteContent = await getSiteContent();
-const { footer } = siteContent;
+const footer = await getFooterContent();
 ---
 
 <footer class="w-full bg-linear-to-t from-purple-dark/90 to-transparent border-t border-purple-neon/20 py-4 flex justify-center">

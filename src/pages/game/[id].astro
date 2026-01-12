@@ -7,13 +7,18 @@ import ServiceGrid from '../../components/react/ServiceGrid';
 import MobileMenu from '../../components/react/MobileMenu';
 import GlitchLogo from '../../components/astro/GlitchLogo.astro';
 import BackgroundLogo from '../../components/astro/BackgroundLogo.astro';
-import { getSiteContent, getGameById } from '../../utils/content-parser';
+import { 
+  getSiteContent, 
+  getGameById, 
+  getServicesByGame,
+  getAllGames 
+} from '../../lib/services';
 
 export const prerender = true;
 
 export async function getStaticPaths() {
-  const siteContent = await getSiteContent();
-  return siteContent.games.map((game: any) => ({
+  const games = await getAllGames();
+  return games.map((game) => ({
     params: { id: game.id },
     props: { game }
   }));
@@ -21,23 +26,23 @@ export async function getStaticPaths() {
 
 const { id } = Astro.params;
 const game = await getGameById(id as string);
-const siteContent = await getSiteContent();
-const { categories, services, accordion } = siteContent;
 
 if (!game) {
   return Astro.redirect('/');
 }
+
+// Obtener servicios específicos de este juego desde la DB
+const gameServices = await getServicesByGame(game.id);
+
+// Obtener categorías y accordion para la UI
+const siteContent = await getSiteContent();
+const { categories, accordion } = siteContent;
 
 const breadcrumbPath = [
   { name: 'Home', url: '/' },
   { name: game.title, url: `/game/${game.id}` },
   { name: 'Services', url: `/game/${game.id}` }
 ];
-
-// Filtrar servicios por juego (si no tiene games definido, se muestra en todos)
-const gameServices = services.filter((service: any) =>
-  !service.games || service.games.length === 0 || service.games.includes(game.id)
-);
 ---
 
 <MainLayout title={`${game.title} - Services | BattleBoosting`}>
@@ -49,7 +54,7 @@ const gameServices = services.filter((service: any) =>
   </div>
   
   <!-- Mobile Menu -->
-  <MobileMenu client:load categories={categories} />
+  <MobileMenu client:load categories={categories as any} />
 
   <main class="min-h-screen pt-24 pb-8 relative">
     <!-- Background BB Watermark -->
@@ -60,7 +65,7 @@ const gameServices = services.filter((service: any) =>
       <div class="flex flex-col lg:flex-row min-h-screen">
         <!-- Sidebar (Desktop) - Full Height -->
         <div class="hidden lg:block lg:w-80 shrink-0">
-          <CategorySidebar client:load categories={categories} />
+          <CategorySidebar client:load categories={categories as any} />
         </div>
 
         <!-- Content Area with more spacing -->

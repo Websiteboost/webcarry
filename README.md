@@ -159,6 +159,24 @@ pnpm build
 pnpm preview
 ```
 
+## 🗄️ Base de Datos
+
+**PostgreSQL en Neon** (serverless)
+
+- **Conexión**: Variables automáticas desde integración Vercel + Neon
+- **Driver**: `@neondatabase/serverless` con pooling
+- **Servicios**: `src/lib/services/*.ts` - Queries modulares
+- **Seed**: `database-seed-minimal.sql` (7 partes ejecutables)
+
+```typescript
+// Ejemplo de uso en páginas Astro
+import { getSiteContent, getServicesByGame } from '../lib/services';
+
+const { home, games } = await getSiteContent();
+```
+
+Ver [DATABASE-ARCHITECTURE.md](DATABASE-ARCHITECTURE.md) para detalles del esquema.
+
 ## 🌐 SSR (Server-Side Rendering)
 
 El proyecto está configurado con SSR usando `@astrojs/node` en modo standalone:

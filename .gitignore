@@ -34,6 +34,11 @@ jspm_packages/
 # build output
 dist/
 
+# environment variables
+.env
+.env.local
+.env*.local
+
 # WXT
 .output
 stats.html

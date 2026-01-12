@@ -5,7 +5,7 @@ import CategoryBadges from '../components/astro/CategoryBadges.astro';
 import GameCards from '../components/react/GameCards';
 import GlitchLogo from '../components/astro/GlitchLogo.astro';
 import BackgroundLogo from '../components/astro/BackgroundLogo.astro';
-import { getSiteContent } from '../utils/content-parser';
+import { getSiteContent } from '../lib/services';
 import * as LucideIcons from 'lucide-react';
 
 const siteContent = await getSiteContent();
@@ -64,10 +64,10 @@ for (const feature of home.features.items) {
           <!-- Section Header -->
           <div class="text-center mb-12">
             <h2 class="text-3xl sm:text-4xl font-bold text-pink-neon neon-text mb-4">
-              {home.features.sectionTitle}
+              {home.features.title}
             </h2>
             <p class="text-base sm:text-lg text-cyber-white/80 max-w-2xl mx-auto">
-              {home.features.sectionDescription}
+              {home.features.description}
             </p>
           </div>
 
