@@ -1,4 +1,4 @@
-import { useState, useCallback, memo } from 'react';
+import { useState, useCallback, useEffect, memo } from 'react';
 import type { BoxPriceItem } from '../../types';
 
 interface Props {
@@ -9,6 +9,11 @@ interface Props {
 function BoxPrice({ values, onSelectionChange }: Props) {
   const [selectedValues, setSelectedValues] = useState<Set<number>>(new Set());
 
+  // Notificar cambios cuando selectedValues cambie
+  useEffect(() => {
+    onSelectionChange(Array.from(selectedValues));
+  }, [selectedValues, onSelectionChange]);
+
   const handleToggle = useCallback((value: number) => {
     setSelectedValues(prev => {
       const newSet = new Set(prev);
@@ -17,13 +22,9 @@ function BoxPrice({ values, onSelectionChange }: Props) {
       } else {
         newSet.add(value);
       }
-      
-      // Notificar cambios
-      onSelectionChange(Array.from(newSet));
-      
       return newSet;
     });
-  }, [onSelectionChange]);
+  }, []);
 
   if (values.length === 0) return null;
 

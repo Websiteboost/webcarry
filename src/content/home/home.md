@@ -1,5 +1,17 @@
 # Home Content Configuration
 
+## Main Title
+BattleBoosting Gaming Services
+
+## Subtitle
+Your trusted platform for professional gaming services
+
+## Featured Categories
+- MMO Boosting
+- Ranked Services
+- Power Leveling
+- Achievement Hunting
+
 ## Features Section
 
 ### Section Title

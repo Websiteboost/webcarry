@@ -17,7 +17,7 @@ function IncrementalBar({ barPrice, onValueChange, title = "Select Value" }: Pro
   // Notificar cambios solo cuando sea necesario
   useEffect(() => {
     onValueChange(minValue, maxValue);
-  }, [minValue, maxValue]);
+  }, [minValue, maxValue, onValueChange]);
 
   // Calcular porcentajes memoizados
   const minPercentage = useMemo(() => {

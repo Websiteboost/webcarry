@@ -10,21 +10,18 @@ function CheckGroup({ options, onSelectionChange }: Props) {
   const [selectedOptions, setSelectedOptions] = useState<Set<string>>(new Set());
 
   const handleToggle = useCallback((optionKey: string) => {
-    setSelectedOptions(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(optionKey)) {
-        newSet.delete(optionKey);
-      } else {
-        newSet.add(optionKey);
-      }
-      
-      // Calcular valores seleccionados
-      const values = Array.from(newSet).map(key => options[key].value);
-      onSelectionChange(values);
-      
-      return newSet;
-    });
-  }, [options, onSelectionChange]);
+    const newSet = new Set(selectedOptions);
+    if (newSet.has(optionKey)) {
+      newSet.delete(optionKey);
+    } else {
+      newSet.add(optionKey);
+    }
+    setSelectedOptions(newSet);
+    
+    // Calcular y notificar después de determinar el nuevo estado
+    const values = Array.from(newSet).map(key => options[key]?.value || 0);
+    onSelectionChange(values);
+  }, [selectedOptions, options, onSelectionChange]);
 
   const optionEntries = Object.entries(options);
 

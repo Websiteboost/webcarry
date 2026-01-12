@@ -325,109 +325,78 @@ function parseServices(): Service[] {
   return services;
 }
 
-// Parse config.md for home and games
-function parseConfigMD(): Partial<SiteContent> {
-  const configPath = path.join(process.cwd(), 'src', 'content', 'config.md');
-  const content = fs.readFileSync(configPath, 'utf-8');
-  
+// Parse home info from home.md
+function parseHomeInfo(): {
+  title: string;
+  subtitle: string;
+  categories: string[];
+} {
+  const homePath = path.join(process.cwd(), 'src', 'content', 'home', 'home.md');
+  const content = fs.readFileSync(homePath, 'utf-8');
   const lines = content.split('\n');
   
-  const siteContent: Partial<SiteContent> = {
-    home: {
-      title: '',
-      subtitle: '',
-      categories: [],
-      features: {
-        sectionTitle: '',
-        sectionDescription: '',
-        items: []
-      }
-    },
-    games: [],
-    paymentMethods: []
+  const homeInfo = {
+    title: '',
+    subtitle: '',
+    categories: [] as string[]
   };
-
-  let currentSection = '';
-  let currentGame: Partial<Game> = {};
-  let currentPaymentMethod: Partial<PaymentMethod> = {};
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
-    // Detect sections
-    if (line.includes('## Home Information') || line.includes('## Información del Inicio')) {
-      currentSection = 'home';
-    } else if (line.includes('## Available Games') || line.includes('## Juegos Disponibles')) {
-      currentSection = 'games';
-    } else if (line.includes('## Payment Methods') || line.includes('## Métodos de Pago')) {
-      currentSection = 'payment-methods';
-    }
-
-    // Home section
-    if (currentSection === 'home') {
-      if (line.startsWith('### Main Title') || line.startsWith('### Título Principal')) {
+    if (line.startsWith('## Main Title')) {
+      i++;
+      if (lines[i]) homeInfo.title = lines[i].trim();
+    } else if (line.startsWith('## Subtitle')) {
+      i++;
+      if (lines[i]) homeInfo.subtitle = lines[i].trim();
+    } else if (line.startsWith('## Featured Categories')) {
+      i++;
+      while (i < lines.length && lines[i]?.startsWith('-')) {
+        homeInfo.categories.push(lines[i].trim().substring(2));
         i++;
-        if (lines[i]) siteContent.home!.title = lines[i].trim();
-      } else if (line.startsWith('### Subtitle') || line.startsWith('### Subtítulo')) {
-        i++;
-        if (lines[i]) siteContent.home!.subtitle = lines[i].trim();
-      } else if (line.startsWith('### Featured Categories') || line.startsWith('### Categorías Destacadas')) {
-        i++;
-        while (i < lines.length && lines[i]?.startsWith('-')) {
-          siteContent.home!.categories.push(lines[i].trim().substring(2));
-          i++;
-        }
-      }
-    }
-
-    // Games section
-    if (currentSection === 'games' && (line.startsWith('### Game') || line.startsWith('### Juego'))) {
-      currentGame = {};
-      while (i < lines.length - 1 && !lines[i + 1]?.startsWith('###') && !lines[i + 1]?.startsWith('##')) {
-        i++;
-        if (!lines[i]) continue;
-        const gameLine = lines[i].trim();
-        if (gameLine.startsWith('- **ID**:')) {
-          currentGame.id = gameLine.split(':')[1].trim();
-        } else if (gameLine.startsWith('- **Title**:') || gameLine.startsWith('- **Título**:')) {
-          currentGame.title = gameLine.split(':')[1].trim();
-        } else if (gameLine.startsWith('- **Category**:') || gameLine.startsWith('- **Categoría**:')) {
-          currentGame.category = gameLine.split(':')[1].trim();
-        } else if (gameLine.startsWith('- **Image**:') || gameLine.startsWith('- **Imagen**:')) {
-          currentGame.image = gameLine.split(':')[1].trim();
-        }
-        if (currentGame.id && currentGame.title && currentGame.category && currentGame.image) {
-          siteContent.games!.push(currentGame as Game);
-          currentGame = {};
-        }
-      }
-    }
-
-    // Payment Methods section
-    if (currentSection === 'payment-methods' && line.startsWith('###') && !line.includes('Payment Methods') && !line.includes('Métodos de Pago')) {
-      currentPaymentMethod = {};
-      const name = line.replace('###', '').trim();
-      currentPaymentMethod.name = name;
-      while (i < lines.length - 1 && !lines[i + 1]?.startsWith('###') && !lines[i + 1]?.startsWith('##')) {
-        i++;
-        if (!lines[i]) continue;
-        const pmLine = lines[i].trim();
-        if (pmLine.startsWith('- **ID**:')) {
-          currentPaymentMethod.id = pmLine.split(':')[1].trim();
-        } else if (pmLine.startsWith('- **Name**:') || pmLine.startsWith('- **Nombre**:')) {
-          currentPaymentMethod.name = pmLine.split(':')[1].trim();
-        } else if (pmLine.startsWith('- **Icon**:') || pmLine.startsWith('- **Icono**:')) {
-          currentPaymentMethod.icon = pmLine.split(':')[1].trim();
-        }
-        if (currentPaymentMethod.id && currentPaymentMethod.name && currentPaymentMethod.icon) {
-          siteContent.paymentMethods!.push(currentPaymentMethod as PaymentMethod);
-          currentPaymentMethod = {};
-        }
       }
     }
   }
 
-  return siteContent;
+  return homeInfo;
+}
+
+// Parse games from games.md
+function parseGames(): Game[] {
+  const gamesPath = path.join(process.cwd(), 'src', 'content', 'games', 'games.md');
+  const content = fs.readFileSync(gamesPath, 'utf-8');
+  const lines = content.split('\n');
+  
+  const games: Game[] = [];
+  let currentGame: Partial<Game> = {};
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    if (line.startsWith('## Game') && !line.includes('Configuration')) {
+      // Save previous game if exists
+      if (currentGame.id && currentGame.title && currentGame.category && currentGame.image) {
+        games.push(currentGame as Game);
+      }
+      currentGame = {};
+    } else if (line.startsWith('- **ID**:')) {
+      currentGame.id = line.split(':')[1].trim();
+    } else if (line.startsWith('- **Title**:')) {
+      currentGame.title = line.split(':')[1].trim();
+    } else if (line.startsWith('- **Category**:')) {
+      currentGame.category = line.split(':')[1].trim();
+    } else if (line.startsWith('- **Image**:')) {
+      currentGame.image = line.split(':')[1].trim();
+    }
+  }
+
+  // Save last game
+  if (currentGame.id && currentGame.title && currentGame.category && currentGame.image) {
+    games.push(currentGame as Game);
+  }
+
+  return games;
 }
 
 // Parse footer from footer.md
@@ -524,7 +493,8 @@ function parseAccordion(): import('../types').AccordionContent {
 
 // Get all site content
 export async function getSiteContent(): Promise<SiteContent> {
-  const config = parseConfigMD();
+  const homeInfo = parseHomeInfo();
+  const games = parseGames();
   const categories = parseCategories();
   const services = parseServices();
   const footer = parseFooter();
@@ -538,13 +508,13 @@ export async function getSiteContent(): Promise<SiteContent> {
   
   return {
     home: {
-      ...config.home!,
+      ...homeInfo,
       features: homeFeatures
     },
-    games: config.games!,
+    games,
     categories,
     services,
-    paymentMethods: config.paymentMethods!,
+    paymentMethods: [], // Ya no usamos payment methods de config.md
     footer,
     accordion
   };

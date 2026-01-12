@@ -14,6 +14,13 @@ const categoriesCollection = defineCollection({
   }),
 });
 
+const gamesCollection = defineCollection({
+  type: 'content',
+  schema: z.object({
+    // Define el esquema según tu estructura
+  }),
+});
+
 const footerCollection = defineCollection({
   type: 'content',
   schema: z.object({
@@ -38,6 +45,7 @@ const servicesCollection = defineCollection({
 export const collections = {
   accordeon: accordeonCollection,
   categories: categoriesCollection,
+  games: gamesCollection,
   footer: footerCollection,
   home: homeCollection,
   services: servicesCollection,
