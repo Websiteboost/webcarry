@@ -152,7 +152,11 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
       return;
     }
     
-    alert(`Processing payment of $${getFinalPrice()} USD for ${service.title} (Region: ${selectedRegion}) with ${selectedPaymentMethod === 'paypal' ? 'PayPal' : 'Card'}`);
+    if (selectedPaymentMethod === 'card') {
+      alert('Soon');
+    } else {
+      alert(`Processing payment of $${getFinalPrice()} USD for ${service.title} (Region: ${selectedRegion}) with PayPal`);
+    }
   };
 
   return (
