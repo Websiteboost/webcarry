@@ -343,7 +343,12 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
               />
               <span className="ml-3 text-base text-cyber-white/80">
                 I accept the{' '}
-                <a href="/terms" className="text-blue-neon hover:text-pink-neon underline">
+                <a 
+                  href="/policies" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-blue-neon hover:text-pink-neon underline"
+                >
                   service policies
                 </a>
               </span>

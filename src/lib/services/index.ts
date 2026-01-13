@@ -28,6 +28,10 @@ export { getAccordionContent } from './accordion';
 export { getFooterContent } from './footer';
 export type { Footer, PaymentMethod } from './footer';
 
+// Policies
+export { getPoliciesContent } from './policies';
+export type { PoliciesContent, PolicySection } from './policies';
+
 /**
  * Función helper para obtener todo el contenido del sitio de una vez
  * Útil para páginas que necesitan múltiples datos
