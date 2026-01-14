@@ -25,6 +25,8 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
   const [additionalValues, setAdditionalValues] = useState<number[]>([]);
   const [boxValues, setBoxValues] = useState<number[]>([]);
   const [selectorValues, setSelectorValues] = useState<Record<string, number>>({});
+  const [imageError, setImageError] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
 
   // Todos los hooks deben estar antes de cualquier return condicional
   const handleBarValueChange = useCallback((minValue: number, maxValue: number) => {
@@ -55,6 +57,9 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
       });
       // Bloquear scroll del body cuando el sidebar está abierto
       document.body.style.overflow = 'hidden';
+      // Reset image state cuando se abre con un nuevo servicio
+      setImageError(false);
+      setImageLoading(true);
     } else {
       setIsVisible(false);
       // Restaurar scroll del body cuando el sidebar se cierra
@@ -65,7 +70,7 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
     return () => {
       document.body.style.overflow = '';
     };
-  }, [isOpen]);
+  }, [isOpen, service?.id]);
 
   // Efecto para manejar el scroll del aside y actualizar el logo en mobile
   useEffect(() => {
@@ -206,8 +211,29 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
 
           {/* Service Preview */}
           <div className="mb-6">
-            <div className="relative h-40 rounded-md overflow-hidden mb-4">
-              <div className="skeleton h-full w-full"></div>
+            <div className="relative h-40 rounded-md overflow-hidden mb-4 bg-linear-to-br from-purple-neon/20 to-blue-neon/20">
+              {imageLoading && !imageError && (
+                <div className="skeleton h-full w-full absolute inset-0"></div>
+              )}
+              {imageError ? (
+                <div className="h-full w-full flex items-center justify-center">
+                  <svg className="w-16 h-16 text-purple-neon/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+              ) : (
+                <img 
+                  src={service.image} 
+                  alt={service.title}
+                  className={`h-full w-full object-cover transition-opacity duration-300 ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
+                  loading="eager"
+                  onLoad={() => setImageLoading(false)}
+                  onError={() => {
+                    setImageLoading(false);
+                    setImageError(true);
+                  }}
+                />
+              )}
               <div className="absolute inset-0 bg-linear-to-b from-transparent via-purple-dark/60 to-purple-dark"></div>
               <div className="absolute bottom-0 left-0 right-0 p-4">
                 <h3 className="text-xl font-bold text-cyber-white">{service.title}</h3>
