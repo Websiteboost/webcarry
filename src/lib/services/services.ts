@@ -25,7 +25,7 @@ export async function getAllServices(): Promise<Service[]> {
   const rows = await sql`
     SELECT id, title, category_id, price, image, description, created_at, updated_at
     FROM services
-    ORDER BY created_at ASC
+    ORDER BY category_id, display_order ASC
   ` as ServiceRow[];
   
   // Para cada servicio, obtener sus precios y juegos
@@ -63,7 +63,7 @@ export async function getServicesByCategory(categoryId: string): Promise<Service
     SELECT id, title, category_id, price, image, description, created_at, updated_at
     FROM services
     WHERE category_id = ${categoryId}
-    ORDER BY created_at ASC
+    ORDER BY display_order ASC
   ` as ServiceRow[];
   
   const services = await Promise.all(
@@ -78,11 +78,11 @@ export async function getServicesByCategory(categoryId: string): Promise<Service
  */
 export async function getServicesByGame(gameId: string): Promise<Service[]> {
   const rows = await sql`
-    SELECT DISTINCT s.id, s.title, s.category_id, s.price, s.image, s.description, s.created_at, s.updated_at
+    SELECT DISTINCT s.id, s.title, s.category_id, s.price, s.image, s.description, s.created_at, s.updated_at, s.display_order
     FROM services s
     INNER JOIN service_games sg ON s.id = sg.service_id
     WHERE sg.game_id = ${gameId}
-    ORDER BY s.created_at ASC
+    ORDER BY s.category_id, s.display_order ASC
   ` as ServiceRow[];
   
   const services = await Promise.all(

@@ -8,13 +8,22 @@ interface CategoryWithServices {
   services: Service[];
 }
 
+interface CategoryInfo {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  services: any[];
+}
+
 interface Props {
   initialServices: Service[];
   accordionContent: AccordionContent;
+  categories?: CategoryInfo[];
   onServiceSelect?: (service: Service) => void;
 }
 
-export default function ServiceGrid({ initialServices, accordionContent, onServiceSelect }: Props) {
+export default function ServiceGrid({ initialServices, accordionContent, categories, onServiceSelect }: Props) {
   const [services, setServices] = useState<Service[]>([]);
   const [categorizedServices, setCategorizedServices] = useState<CategoryWithServices[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,27 +36,39 @@ export default function ServiceGrid({ initialServices, accordionContent, onServi
     const timer = setTimeout(() => {
       setServices(initialServices);
       
-      // Agrupar servicios por categoría
-      const grouped = initialServices.reduce((acc, service) => {
-        const existingCategory = acc.find(cat => cat.id === service.categoryId);
-        if (existingCategory) {
-          existingCategory.services.push(service);
-        } else {
-          acc.push({
-            id: service.categoryId,
-            name: service.categoryId, // Esto se puede mejorar pasando el nombre real
-            services: [service]
-          });
-        }
-        return acc;
-      }, [] as CategoryWithServices[]);
+      // Si tenemos categories, usar su orden; si no, agrupar dinámicamente
+      let grouped: CategoryWithServices[];
+      
+      if (categories && categories.length > 0) {
+        // Usar el orden de categories que viene de la BD con display_order
+        grouped = categories.map(cat => ({
+          id: cat.id,
+          name: cat.name,
+          services: initialServices.filter(s => s.categoryId === cat.id)
+        })).filter(cat => cat.services.length > 0);
+      } else {
+        // Fallback: agrupar servicios por categoría dinámicamente
+        grouped = initialServices.reduce((acc, service) => {
+          const existingCategory = acc.find(cat => cat.id === service.categoryId);
+          if (existingCategory) {
+            existingCategory.services.push(service);
+          } else {
+            acc.push({
+              id: service.categoryId,
+              name: service.categoryId,
+              services: [service]
+            });
+          }
+          return acc;
+        }, [] as CategoryWithServices[]);
+      }
       
       setCategorizedServices(grouped);
       setLoading(false);
     }, 800);
 
     return () => clearTimeout(timer);
-  }, [initialServices]);
+  }, [initialServices, categories]);
 
   const handleServiceSelect = (service: Service) => {
     setSelectedService(service);
