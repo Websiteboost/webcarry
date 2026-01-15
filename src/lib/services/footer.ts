@@ -12,6 +12,8 @@ export interface Footer {
   paymentMethodsTitle: string;
   copyrightText: string;
   disclaimer: string;
+  discordLink?: string;
+  discordWorkUs?: string;
   paymentMethods: PaymentMethod[];
 }
 
@@ -21,7 +23,7 @@ export interface Footer {
 export async function getFooterContent(): Promise<Footer> {
   // Obtener site_config para los textos
   const configRows = await sql`
-    SELECT footer_payment_title, footer_copyright, disclaimer
+    SELECT footer_payment_title, footer_copyright, disclaimer, discord_link, discord_work_us
     FROM site_config
     WHERE id = 1
     LIMIT 1
@@ -44,6 +46,8 @@ export async function getFooterContent(): Promise<Footer> {
     paymentMethodsTitle: config.footer_payment_title,
     copyrightText: config.footer_copyright,
     disclaimer: config.disclaimer || 'All services are provided for entertainment purposes only.',
+    discordLink: config.discord_link,
+    discordWorkUs: config.discord_work_us,
     paymentMethods: paymentRows.map(row => ({
       name: row.name,
       type: row.type as 'paypal' | 'card',

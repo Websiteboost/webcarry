@@ -14,6 +14,7 @@ export interface HomeContent {
   subtitle: string;
   categories: string[];
   logoText: string;
+  discordLink?: string;
   features: {
     title: string;
     description: string;
@@ -27,7 +28,7 @@ export interface HomeContent {
 export async function getHomeContent(): Promise<HomeContent> {
   // Obtener site_config (singleton)
   const configRows = await sql`
-    SELECT home_title, home_subtitle, home_categories, logo_text
+    SELECT home_title, home_subtitle, home_categories, logo_text, discord_link
     FROM site_config
     WHERE id = 1
     LIMIT 1
@@ -51,6 +52,7 @@ export async function getHomeContent(): Promise<HomeContent> {
     subtitle: config.home_subtitle,
     categories: config.home_categories,
     logoText: config.logo_text || 'BATTLE BOOSTING',
+    discordLink: config.discord_link,
     features: {
       title: 'Why Choose Us',
       description: 'Experience professional gaming services with industry-leading standards and guaranteed results',

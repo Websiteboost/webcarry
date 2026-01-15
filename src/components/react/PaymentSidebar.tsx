@@ -153,6 +153,64 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
     return basePrice + additionalTotal + selectorTotal;
   };
 
+  const getPaymentDescription = () => {
+    const details: string[] = [`${service.title} - Region: ${selectedRegion}`];
+    
+    // Agregar detalles de barPrice si aplica
+    if (service?.barPrice && barMinValue !== null && barMaxValue !== null) {
+      details.push(`${service.barPrice.label}: ${barMinValue} to ${barMaxValue}`);
+    }
+    
+    // Agregar detalles de boxPrice si aplica
+    if (service?.boxPrice && boxValues.length > 0) {
+      const selectedBoxes = service.boxPrice
+        .map((box, index) => boxValues.includes(box.value) ? box.title || `$${box.value}` : null)
+        .filter(Boolean);
+      if (selectedBoxes.length > 0) {
+        details.push(`Selected: ${selectedBoxes.join(', ')}`);
+      }
+    }
+    
+    // Agregar precio personalizado si aplica
+    if (service?.customPrice?.enabled) {
+      if (customPrice) {
+        details.push(`${service.customPrice.label || 'Amount'}: $${customPrice}`);
+      } else if (selectedPrice) {
+        details.push(`${service.customPrice.label || 'Amount'}: $${selectedPrice}`);
+      }
+    }
+    
+    // Agregar servicios adicionales si aplica
+    if (service?.additionalServices && additionalValues.length > 0) {
+      const selectedAdditional = Object.entries(service.additionalServices)
+        .map(([label, option]) => additionalValues.includes(option.value) ? label : null)
+        .filter(Boolean);
+      if (selectedAdditional.length > 0) {
+        details.push(`Extras: ${selectedAdditional.join(', ')}`);
+      }
+    }
+    
+    // Agregar selectores personalizados si aplica
+    if (service?.selectors && Object.keys(selectorValues).length > 0) {
+      const selectorDetails = Object.entries(service.selectors).map(([title, options], index) => {
+        const selectorId = `${service.id}-selector-${index}`;
+        const selectedValue = selectorValues[selectorId];
+        if (selectedValue !== undefined) {
+          const selectedOption = options.find(opt => opt.value === selectedValue);
+          return selectedOption ? `${title}: ${selectedOption.label}` : null;
+        }
+        return null;
+      }).filter(Boolean);
+      
+      if (selectorDetails.length > 0) {
+        details.push(selectorDetails.join(', '));
+      }
+    }
+    
+    details.push(`Total: $${getFinalPrice()}`);
+    return details.join(' | ');
+  };
+
   const handlePayment = () => {
     if (!acceptedTerms || !selectedPaymentMethod) {
       alert('Please accept the policies and select a payment method');
@@ -454,7 +512,7 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
                 <PayPalButton
                   amount={getFinalPrice()}
                   currency="USD"
-                  description={`${service.title} - Region: ${selectedRegion}`}
+                  description={getPaymentDescription()}
                   onSuccess={handlePayPalSuccess}
                   onError={handlePayPalError}
                   onCancel={handlePayPalCancel}
