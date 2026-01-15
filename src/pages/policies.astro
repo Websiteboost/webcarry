@@ -12,7 +12,7 @@ const siteContent = await getSiteContent();
 const { home } = siteContent;
 ---
 
-<MainLayout title="Service Policies | BattleBoosting">
+<MainLayout title={`Service Policies | ${home.title}`}>
   <div class="w-full max-w-full overflow-x-hidden min-h-screen flex flex-col relative">
     <!-- Background BB Watermark -->
     <BackgroundLogo />
