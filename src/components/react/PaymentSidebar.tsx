@@ -5,6 +5,7 @@ import CheckGroup from './CheckGroup';
 import BoxPrice from './BoxPrice';
 import Accordion from './Accordion';
 import CustomSelector from './CustomSelector';
+import PayPalButton from './PayPalButton';
 
 interface Props {
   service: Service | null;
@@ -27,6 +28,7 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
   const [selectorValues, setSelectorValues] = useState<Record<string, number>>({});
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
+  const [showPayPalButton, setShowPayPalButton] = useState(false);
 
   // Todos los hooks deben estar antes de cualquier return condicional
   const handleBarValueChange = useCallback((minValue: number, maxValue: number) => {
@@ -158,10 +160,27 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
     }
     
     if (selectedPaymentMethod === 'card') {
-      alert('Soon');
-    } else {
-      alert(`Processing payment of $${getFinalPrice()} USD for ${service.title} (Region: ${selectedRegion}) with PayPal`);
+      alert('Card payment coming soon');
+    } else if (selectedPaymentMethod === 'paypal') {
+      setShowPayPalButton(true);
     }
+  };
+
+  const handlePayPalSuccess = (details: any) => {
+    console.log('Payment successful!', details);
+    alert(`✓ Payment successful!\n\nOrder ID: ${details.id}\nAmount: $${details.purchase_units[0].amount.value} ${details.purchase_units[0].amount.currency_code}\n\nThank you for your purchase!`);
+    setShowPayPalButton(false);
+    // onClose(); // Descomentar si quieres cerrar el sidebar automáticamente
+  };
+
+  const handlePayPalError = (error: any) => {
+    console.error('PayPal error:', error);
+    alert('Payment failed. Please try again.');
+    setShowPayPalButton(false);
+  };
+
+  const handlePayPalCancel = () => {
+    setShowPayPalButton(false);
   };
 
   return (
@@ -429,17 +448,38 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
               <span className="text-3xl font-bold text-cyber-white" style={{textShadow: '0 0 5px rgba(16,185,129,0.3), 0 0 10px rgba(16,185,129,0.2)'}}>${getFinalPrice()}</span>
             </div>
 
-            <button
-              onClick={handlePayment}
-              disabled={!acceptedTerms || !selectedPaymentMethod}
-              className={`w-full py-5 rounded-md font-bold text-lg transition-all ${
-                acceptedTerms && selectedPaymentMethod
-                  ? 'bg-linear-to-r from-pink-neon to-purple-neon text-cyber-white hover:shadow-lg hover:shadow-pink-neon/50 hover:scale-105'
-                  : 'bg-purple-dark/30 text-cyber-white/40 cursor-not-allowed'
-              }`}
-            >
-              Pay Now
-            </button>
+            {/* Mostrar botón de PayPal si está seleccionado y activado */}
+            {selectedPaymentMethod === 'paypal' && showPayPalButton ? (
+              <div className="space-y-3">
+                <PayPalButton
+                  amount={getFinalPrice()}
+                  currency="USD"
+                  description={`${service.title} - Region: ${selectedRegion}`}
+                  onSuccess={handlePayPalSuccess}
+                  onError={handlePayPalError}
+                  onCancel={handlePayPalCancel}
+                  disabled={!acceptedTerms}
+                />
+                <button
+                  onClick={() => setShowPayPalButton(false)}
+                  className="w-full py-3 rounded-md font-medium text-base bg-purple-dark/30 text-cyber-white hover:bg-purple-dark/50 transition-all"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={handlePayment}
+                disabled={!acceptedTerms || !selectedPaymentMethod}
+                className={`w-full py-5 rounded-md font-bold text-lg transition-all ${
+                  acceptedTerms && selectedPaymentMethod
+                    ? 'bg-linear-to-r from-pink-neon to-purple-neon text-cyber-white hover:shadow-lg hover:shadow-pink-neon/50 hover:scale-105'
+                    : 'bg-purple-dark/30 text-cyber-white/40 cursor-not-allowed'
+                }`}
+              >
+                Pay Now
+              </button>
+            )}
           </div>
 
           {/* Mobile Accordion - Below Pay Now button */}
