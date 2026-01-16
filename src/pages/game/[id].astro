@@ -11,7 +11,8 @@ import {
   getSiteContent, 
   getGameById, 
   getServicesByGame,
-  getCategoriesWithServicesByGame
+  getCategoriesWithServicesByGame,
+  getPaymentConfig
 } from '../../lib/services';
 
 // Modo SSR dinámico - consulta DB en cada request
@@ -31,6 +32,9 @@ const gameCategories = await getCategoriesWithServicesByGame(game.id);
 // Obtener accordion para la UI
 const siteContent = await getSiteContent();
 const { accordion, home } = siteContent;
+
+// Obtener configuración de pago
+const paymentConfig = await getPaymentConfig();
 
 const breadcrumbPath = [
   { name: 'Home', url: '/' },
@@ -81,7 +85,7 @@ const breadcrumbPath = [
           </div>
 
           <!-- Services Grid -->
-          <ServiceGrid client:load initialServices={gameServices} accordionContent={accordion} categories={gameCategories as any} />
+          <ServiceGrid client:load initialServices={gameServices} accordionContent={accordion} categories={gameCategories as any} paymentDisclaimer={paymentConfig.disclaimer} />
         </div>
       </div>
     </div>

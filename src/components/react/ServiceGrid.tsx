@@ -20,10 +20,11 @@ interface Props {
   initialServices: Service[];
   accordionContent: AccordionContent;
   categories?: CategoryInfo[];
+  paymentDisclaimer?: string;
   onServiceSelect?: (service: Service) => void;
 }
 
-export default function ServiceGrid({ initialServices, accordionContent, categories, onServiceSelect }: Props) {
+export default function ServiceGrid({ initialServices, accordionContent, categories, paymentDisclaimer, onServiceSelect }: Props) {
   const [services, setServices] = useState<Service[]>([]);
   const [categorizedServices, setCategorizedServices] = useState<CategoryWithServices[]>([]);
   const [loading, setLoading] = useState(true);
@@ -197,6 +198,7 @@ export default function ServiceGrid({ initialServices, accordionContent, categor
         isOpen={isPaymentOpen}
         onClose={handleClosePayment}
         accordionContent={accordionContent}
+        paymentDisclaimer={paymentDisclaimer}
       />
     </div>
   );

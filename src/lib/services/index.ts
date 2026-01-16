@@ -27,7 +27,9 @@ export { getAccordionContent } from './accordion';
 // Footer
 export { getFooterContent } from './footer';
 export type { Footer, PaymentMethod } from './footer';
-
+// Payment
+export { getPaymentConfig } from './payment';
+export type { PaymentConfig } from './payment';
 // Policies
 export { getPoliciesContent } from './policies';
 export type { PoliciesContent, PolicySection } from './policies';

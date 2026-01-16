@@ -12,9 +12,10 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   accordionContent: AccordionContent;
+  paymentDisclaimer?: string;
 }
 
-export default function PaymentSidebar({ service, isOpen, onClose, accordionContent }: Props) {
+export default function PaymentSidebar({ service, isOpen, onClose, accordionContent, paymentDisclaimer }: Props) {
   const [selectedRegion, setSelectedRegion] = useState<Region>('US');
   const [selectedPrice, setSelectedPrice] = useState<number | null>(null);
   const [customPrice, setCustomPrice] = useState<string>('');
@@ -509,7 +510,7 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
               <div className="flex-1">
                 <p className="text-yellow-500 font-semibold text-sm mb-1">Important Notice</p>
                 <p className="text-yellow-200/90 text-xs leading-relaxed">
-                  After completing your payment, please create a ticket in our Discord server to start your order. Join BattleBoost Discord community for support!
+                  {paymentDisclaimer || 'After completing your payment, please create a ticket in our Discord server to start your order. Join BattleBoost Discord community for support!'}
                 </p>
               </div>
             </div>
