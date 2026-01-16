@@ -49,7 +49,7 @@ export default function PayPalButton({
 
     // Cargar el SDK de PayPal
     const script = document.createElement('script');
-    script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=${currency}&intent=capture`;
+    script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=${currency}&locale=en_US&intent=capture`;
     script.addEventListener('load', () => {
       setSdkReady(true);
     });
