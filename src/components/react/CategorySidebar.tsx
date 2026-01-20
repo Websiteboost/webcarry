@@ -40,7 +40,7 @@ export default function CategorySidebar({ categories, currentCategoryId, onCateg
   }
 
   return (
-    <aside className="w-80 h-screen sticky top-0 glass-effect p-8 border-r border-purple-neon/20 overflow-y-auto">
+    <aside className="w-full h-screen sticky top-0 glass-effect p-8 border-r border-purple-neon/20 overflow-y-auto">
       <h2 className="text-2xl font-bold text-pink-neon mb-8 neon-text">Categories</h2>
       <nav className="space-y-2">
         {categories.map((category) => {
