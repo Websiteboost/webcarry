@@ -3,10 +3,11 @@ import type { AdditionalOption } from '../../types';
 
 interface Props {
   options: Record<string, AdditionalOption>;
+  title?: string;
   onSelectionChange: (selectedValues: number[]) => void;
 }
 
-function CheckGroup({ options, onSelectionChange }: Props) {
+function CheckGroup({ options, title = 'Additional Services', onSelectionChange }: Props) {
   const [selectedOptions, setSelectedOptions] = useState<Set<string>>(new Set());
 
   const handleToggle = useCallback((optionKey: string) => {
@@ -30,7 +31,7 @@ function CheckGroup({ options, onSelectionChange }: Props) {
   return (
     <div className="space-y-3">
       <label className="block text-base font-medium text-cyber-white">
-        Additional Services
+        {title}
       </label>
       
       <div className="space-y-2">

@@ -40,7 +40,7 @@ export type CustomPriceConfig = CustomPrice;
 
 export interface BoxPriceItem {
   value: number;
-  title?: string;
+  label?: string;
 }
 
 export interface SelectOption {
@@ -55,10 +55,29 @@ export interface Selectors {
 // Alias para uso en database services
 export type SelectorConfig = Selectors;
 
+export interface BoxTitleOption {
+  label: string;
+  value: string;
+}
+
+export interface ServiceTitle {
+  id: string;
+  title: string;
+  order: number;
+}
+
+export interface ServiceComponent {
+  id: string;
+  type: 'bar' | 'box' | 'custom' | 'selectors' | 'additional' | 'boxtitle' | 'labeltitle';
+  order: number;
+  data?: any;
+}
+
 export interface Service {
   id: string;
   title: string;
   description: string[];
+  service_points?: string[];
   price: number;
   image: string;
   categoryId: string;
@@ -66,8 +85,12 @@ export interface Service {
   barPrice?: BarPrice;
   boxPrice?: BoxPriceItem[];
   additionalServices?: Record<string, AdditionalOption>;
+  additionalServicesTitle?: string;
   customPrice?: CustomPrice;
   selectors?: Selectors;
+  boxTitles?: BoxTitleOption[];
+  serviceTitles?: ServiceTitle[];
+  components?: ServiceComponent[];
 }
 
 export interface PaymentMethod {

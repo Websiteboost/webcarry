@@ -7,20 +7,21 @@ interface Props {
 }
 
 function BoxPrice({ values, onSelectionChange }: Props) {
-  const [selectedValues, setSelectedValues] = useState<Set<number>>(new Set());
+  const [selectedIndexes, setSelectedIndexes] = useState<Set<number>>(new Set());
 
-  // Notificar cambios cuando selectedValues cambie
+  // Notificar cambios cuando selectedIndexes cambie
   useEffect(() => {
-    onSelectionChange(Array.from(selectedValues));
-  }, [selectedValues, onSelectionChange]);
+    const selectedValues = Array.from(selectedIndexes).map(idx => values[idx].value);
+    onSelectionChange(selectedValues);
+  }, [selectedIndexes, values, onSelectionChange]);
 
-  const handleToggle = useCallback((value: number) => {
-    setSelectedValues(prev => {
+  const handleToggle = useCallback((index: number) => {
+    setSelectedIndexes(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(value)) {
-        newSet.delete(value);
+      if (newSet.has(index)) {
+        newSet.delete(index);
       } else {
-        newSet.add(value);
+        newSet.add(index);
       }
       return newSet;
     });
@@ -36,23 +37,23 @@ function BoxPrice({ values, onSelectionChange }: Props) {
       
       {/* Grid responsivo que se adapta al contenido */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-        {values.map((item) => {
-          const isSelected = selectedValues.has(item.value);
+        {values.map((item, index) => {
+          const isSelected = selectedIndexes.has(index);
+          const isLongLabel = item.label && item.label.length > 6;
           
           return (
             <button
-              key={item.value}
-              onClick={() => handleToggle(item.value)}
+              key={`box-${index}`}
+              onClick={() => handleToggle(index)}
               className={`py-4 px-4 rounded-md font-bold text-lg transition-all ${
                 isSelected
-                  ? 'bg-green-neon/20 border-2 border-green-neon text-green-neon scale-105'
-                  : 'bg-purple-dark/30 border-2 border-purple-neon/30 text-cyber-white hover:border-purple-neon/60 hover:scale-102'
-              }`}
+                  ? 'bg-green-neon/20 border-2 border-green-neon text-green-neon'
+                  : 'bg-purple-dark/30 border-2 border-purple-neon/30 text-cyber-white hover:border-purple-neon/60'
+              } ${isLongLabel ? 'col-span-2' : ''}`}
               style={{
                 boxShadow: isSelected 
-                  ? '0 0 15px rgba(16, 185, 129, 0.5), 0 0 25px rgba(16, 185, 129, 0.3)' 
-                  : 'none',
-                transform: isSelected ? 'scale(1.05)' : 'scale(1)'
+                  ? '0 0 8px rgba(16, 185, 129, 0.4)' 
+                  : 'none'
               }}
             >
               <div className="flex flex-col items-center gap-1">
@@ -77,9 +78,9 @@ function BoxPrice({ values, onSelectionChange }: Props) {
                 )}
                 
                 {/* Título o Valor */}
-                {item.title ? (
+                {item.label ? (
                   <div className="flex flex-col items-center">
-                    <span className="text-base font-semibold text-center">{item.title}</span>
+                    <span className="text-base font-semibold text-center">{item.label}</span>
                     <span className="text-sm opacity-80">${item.value}</span>
                   </div>
                 ) : (
@@ -92,7 +93,7 @@ function BoxPrice({ values, onSelectionChange }: Props) {
       </div>
       
       {/* Indicador de selección múltiple */}
-      {selectedValues.size > 0 && (
+      {selectedIndexes.size > 0 && (
         <div className="glass-effect rounded-md p-3 border border-green-neon/20">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -101,11 +102,11 @@ function BoxPrice({ values, onSelectionChange }: Props) {
                 style={{boxShadow: '0 0 5px rgba(16,185,129,0.8)'}}
               />
               <span className="text-sm text-cyber-white/70">
-                {selectedValues.size} amount{selectedValues.size > 1 ? 's' : ''} selected
+                {selectedIndexes.size} amount{selectedIndexes.size > 1 ? 's' : ''} selected
               </span>
             </div>
             <span className="text-base font-bold text-green-neon">
-              +${Array.from(selectedValues).reduce((sum, val) => sum + val, 0)}
+              +${Array.from(selectedIndexes).map(idx => values[idx].value).reduce((sum, val) => sum + val, 0)}
             </span>
           </div>
         </div>

@@ -3,6 +3,8 @@ import type { Service, Region, AccordionContent } from '../../types';
 import IncrementalBar from './IncrementalBar';
 import CheckGroup from './CheckGroup';
 import BoxPrice from './BoxPrice';
+import BoxTitle from './BoxTitle';
+import TitleService from './TitleService';
 import Accordion from './Accordion';
 import CustomSelector from './CustomSelector';
 import PayPalButton from './PayPalButton';
@@ -165,7 +167,7 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
     // Agregar detalles de boxPrice si aplica
     if (service?.boxPrice && boxValues.length > 0) {
       const selectedBoxes = service.boxPrice
-        .map((box, index) => boxValues.includes(box.value) ? box.title || `$${box.value}` : null)
+        .map((box, index) => boxValues.includes(box.value) ? box.label || `$${box.value}` : null)
         .filter(Boolean);
       if (selectedBoxes.length > 0) {
         details.push(`Selected: ${selectedBoxes.join(', ')}`);
@@ -268,11 +270,11 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
       {/* Sidebar */}
       {isOpen && (
         <aside 
-          className={`fixed top-0 lg:top-24 right-0 h-full lg:h-[calc(100vh-6rem)] w-full sm:w-120 glass-effect border-l border-purple-neon/30 z-40 lg:z-50 overflow-y-auto transition-transform duration-300 ease-in-out ${
+          className={`fixed top-0 right-0 h-full w-full sm:w-120 glass-effect border-l border-purple-neon/30 z-40 lg:z-50 overflow-y-auto transition-transform duration-300 ease-in-out ${
             isVisible ? 'translate-x-0' : 'translate-x-full'
           }`}
         >
-        <div className="p-6 pb-32 sm:pb-6 pt-40 lg:pt-6">
+        <div className="p-6 pb-32 sm:pb-6 pt-32 lg:pt-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-pink-neon neon-text">Checkout</h2>
@@ -318,15 +320,17 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
               </div>
             </div>
             
-            {service.description && service.description.length > 0 && (
+            {service.service_points && Array.isArray(service.service_points) && service.service_points.length > 0 && (
               <ul className="space-y-2">
-                {service.description.map((point, index) => (
-                  <li key={index} className="flex items-start text-sm text-cyber-white/80">
-                    <svg className="w-4 h-4 text-green-neon mr-2 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    <span>{point}</span>
-                  </li>
+                {service.service_points.map((point, index) => (
+                  point ? (
+                    <li key={index} className="flex items-start text-sm text-cyber-white/80">
+                      <svg className="w-4 h-4 text-green-neon mr-2 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      <span>{point}</span>
+                    </li>
+                  ) : null
                 ))}
               </ul>
             )}
@@ -354,91 +358,113 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
             </div>
           </div>
 
-          {/* Incremental Bar si el servicio tiene barPrice */}
-          {service.barPrice && (
-            <div className="mb-6">
-              <IncrementalBar 
-                barPrice={service.barPrice} 
-                onValueChange={handleBarValueChange}
-                title={service.barPrice.label}
-              />
-            </div>
-          )}
-
-          {/* BoxPrice si el servicio tiene boxPrice */}
-          {service.boxPrice && service.boxPrice.length > 0 && (
-            <div className="mb-6">
-              <BoxPrice 
-                values={service.boxPrice}
-                onSelectionChange={handleBoxPriceChange}
-              />
-            </div>
-          )}
-
-          {/* Custom Price Input - Solo mostrar si el servicio tiene customPrice habilitado */}
-          {service.customPrice?.enabled && (
-            <div className="mb-6">
-              <label className="block text-base font-medium text-cyber-white mb-3">
-                {service.customPrice.label || 'Custom Amount'}
-              </label>
+          {/* Renderizar componentes en el orden de creación */}
+          {service.components && service.components.map((component, idx) => {
+            switch (component.type) {
+              case 'labeltitle':
+                return (
+                  <TitleService 
+                    key={`${component.id}-${idx}`}
+                    title={component.data?.title || ''}
+                  />
+                );
               
-              {/* Presets si existen */}
-              {service.customPrice.presets && service.customPrice.presets.length > 0 && (
-                <div className="grid grid-cols-4 gap-3 mb-4">
-                  {service.customPrice.presets.map((preset) => (
-                    <button
-                      key={preset}
-                      onClick={() => handlePresetPriceSelect(preset)}
-                      className={`py-3 px-4 rounded-md font-semibold text-base transition-all ${
-                        selectedPrice === preset
-                          ? 'bg-green-neon/20 border-2 border-green-neon text-green-neon'
-                          : 'bg-purple-dark/30 border-2 border-transparent text-cyber-white hover:border-purple-neon/50'
-                      }`}
-                    >
-                      ${preset}
-                    </button>
-                  ))}
-                </div>
-              )}
+              case 'bar':
+                return service.barPrice ? (
+                  <div key={`${component.id}-${idx}`} className="mb-6">
+                    <IncrementalBar 
+                      barPrice={service.barPrice} 
+                      onValueChange={handleBarValueChange}
+                      title={service.barPrice.label}
+                    />
+                  </div>
+                ) : null;
               
-              {/* Input personalizado */}
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-green-neon text-lg">$</span>
-                <input
-                  type="text"
-                  value={customPrice}
-                  onChange={handleCustomPriceChange}
-                  placeholder="Enter amount"
-                  className="w-full bg-purple-dark/30 border-2 border-purple-neon/30 rounded-md py-4 pl-8 pr-4 text-base text-cyber-white placeholder-cyber-white/40 focus:border-purple-neon focus:outline-none transition-colors"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Custom Selectors - Si el servicio tiene selectors */}
-          {service.selectors && Object.keys(service.selectors).length > 0 && (
-            <>
-              {Object.entries(service.selectors).map(([title, options], index) => (
-                <CustomSelector
-                  key={`${service.id}-selector-${index}`}
-                  selectorId={`${service.id}-selector-${index}`}
-                  title={title}
-                  options={options}
-                  onValueChange={(value) => handleSelectorChange(`${service.id}-selector-${index}`, value)}
-                />
-              ))}
-            </>
-          )}
-
-          {/* Additional Services CheckGroup */}
-          {service.additionalServices && Object.keys(service.additionalServices).length > 0 && (
-            <div className="mb-6">
-              <CheckGroup 
-                options={service.additionalServices}
-                onSelectionChange={handleAdditionalServicesChange}
-              />
-            </div>
-          )}
+              case 'box':
+                return service.boxPrice && service.boxPrice.length > 0 ? (
+                  <div key={`${component.id}-${idx}`} className="mb-6">
+                    <BoxPrice 
+                      values={service.boxPrice}
+                      onSelectionChange={handleBoxPriceChange}
+                    />
+                  </div>
+                ) : null;
+              
+              case 'boxtitle':
+                return component.data?.options && Array.isArray(component.data.options) && component.data.options.length > 0 ? (
+                  <div key={`${component.id}-${idx}`} className="mb-6">
+                    <BoxTitle options={component.data.options} />
+                  </div>
+                ) : null;
+              
+              case 'custom':
+                return service.customPrice?.enabled ? (
+                  <div key={`${component.id}-${idx}`} className="mb-6">
+                    <label className="block text-base font-medium text-cyber-white mb-3">
+                      {service.customPrice.label || 'Custom Amount'}
+                    </label>
+                    
+                    {service.customPrice.presets && service.customPrice.presets.length > 0 && (
+                      <div className="grid grid-cols-4 gap-3 mb-4">
+                        {service.customPrice.presets.map((preset) => (
+                          <button
+                            key={preset}
+                            onClick={() => handlePresetPriceSelect(preset)}
+                            className={`py-3 px-4 rounded-md font-semibold text-base transition-all ${
+                              selectedPrice === preset
+                                ? 'bg-green-neon/20 border-2 border-green-neon text-green-neon'
+                                : 'bg-purple-dark/30 border-2 border-transparent text-cyber-white hover:border-purple-neon/50'
+                            }`}
+                          >
+                            ${preset}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-green-neon text-lg">$</span>
+                      <input
+                        type="text"
+                        value={customPrice}
+                        onChange={handleCustomPriceChange}
+                        placeholder="Enter amount"
+                        className="w-full bg-purple-dark/30 border-2 border-purple-neon/30 rounded-md py-4 pl-8 pr-4 text-base text-cyber-white placeholder-cyber-white/40 focus:border-purple-neon focus:outline-none transition-colors"
+                      />
+                    </div>
+                  </div>
+                ) : null;
+              
+              case 'selectors':
+                return service.selectors && Object.keys(service.selectors).length > 0 ? (
+                  <div key={`${component.id}-${idx}`}>
+                    {Object.entries(service.selectors).map(([title, options], index) => (
+                      <CustomSelector
+                        key={`${service.id}-selector-${index}`}
+                        selectorId={`${service.id}-selector-${index}`}
+                        title={title}
+                        options={options}
+                        onValueChange={(value) => handleSelectorChange(`${service.id}-selector-${index}`, value)}
+                      />
+                    ))}
+                  </div>
+                ) : null;
+              
+              case 'additional':
+                return service.additionalServices && Object.keys(service.additionalServices).length > 0 ? (
+                  <div key={`${component.id}-${idx}`} className="mb-6">
+                    <CheckGroup 
+                      options={service.additionalServices}
+                      title={service.additionalServicesTitle}
+                      onSelectionChange={handleAdditionalServicesChange}
+                    />
+                  </div>
+                ) : null;
+              
+              default:
+                return null;
+            }
+          })}
 
           {/* Terms Checkbox */}
           <div className="mb-6">
