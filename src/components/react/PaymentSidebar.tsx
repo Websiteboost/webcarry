@@ -54,6 +54,55 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
     }));
   }, []);
 
+  // Función helper para calcular el precio de la barra según el modo
+  const calculateBarPrice = useCallback((barPrice: any, minValue: number, maxValue: number) => {
+    if (!barPrice || minValue === null || maxValue === null) return 0;
+    
+    const mode = barPrice.mode || 'simple';
+    
+    if (mode === 'simple') {
+      // Modo simple: calcular el costo de SUBIR niveles
+      // Del nivel 1 al 2 = 1 subida, del 1 al 10 = 9 subidas
+      const { step } = barPrice;
+      const rangeSize = maxValue - minValue;
+      return rangeSize * step;
+      
+    } else if (mode === 'breakpoints') {
+      // Modo breakpoints: calcular precio basado en múltiples rangos
+      // Cada breakpoint tiene su propio precio (step) por nivel
+      const { breakpoints } = barPrice;
+      if (!breakpoints || breakpoints.length === 0) return 0;
+      
+      let totalPrice = 0;
+      
+      // Recorrer cada breakpoint y calcular el precio por segmento
+      // La lógica: contar subidas cuyo DESTINO cae dentro del breakpoint
+      for (const breakpoint of breakpoints) {
+        const { initValue: bpInit, finalValue: bpFinal, step: bpStep } = breakpoint;
+        
+        // Calcular qué niveles de DESTINO caen en este breakpoint
+        // Primer nivel de destino posible en este breakpoint
+        const firstDest = Math.max(minValue + 1, bpInit);
+        // Último nivel de destino posible en este breakpoint
+        const lastDest = Math.min(maxValue, bpFinal);
+        
+        // Si hay subidas con destino en este breakpoint
+        if (firstDest <= lastDest) {
+          // Cantidad de subidas = cantidad de destinos
+          const numLevels = lastDest - firstDest + 1;
+          totalPrice += numLevels * bpStep;
+        }
+        
+        // Si ya pasamos el rango máximo, podemos salir del loop
+        if (maxValue <= bpFinal) break;
+      }
+      
+      return totalPrice;
+    }
+    
+    return 0;
+  }, []);
+
   useEffect(() => {
     if (isOpen) {
       // Forzar un reflow para que la animación funcione en la primera apertura
@@ -121,11 +170,9 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
   const getFinalPrice = () => {
     let basePrice = 0;
     
-    // Si el servicio tiene barPrice, calcular número de steps en el rango
+    // Si el servicio tiene barPrice, calcular usando la función helper
     if (service?.barPrice && barMinValue !== null && barMaxValue !== null) {
-      const { step } = service.barPrice;
-      const numSteps = Math.round((barMaxValue - barMinValue) / step);
-      basePrice += numSteps * step;
+      basePrice += calculateBarPrice(service.barPrice, barMinValue, barMaxValue);
     }
     
     // Si tiene boxPrice, sumar los valores seleccionados

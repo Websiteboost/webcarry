@@ -8,9 +8,14 @@ interface Props {
 }
 
 function IncrementalBar({ barPrice, onValueChange, title = "Select Value" }: Props) {
-  const { initValue, finalValue, step } = barPrice;
-  const [minValue, setMinValue] = useState(initValue);
-  const [maxValue, setMaxValue] = useState(finalValue);
+  const { initValue, finalValue, defaultRange, progressValue = 1 } = barPrice;
+  
+  // Usar defaultRange si está disponible, sino usar initValue y finalValue
+  const initialMinValue = defaultRange?.start ?? initValue;
+  const initialMaxValue = defaultRange?.end ?? finalValue;
+  
+  const [minValue, setMinValue] = useState(initialMinValue);
+  const [maxValue, setMaxValue] = useState(initialMaxValue);
   const [draggingHandle, setDraggingHandle] = useState<'min' | 'max' | null>(null);
   const barRef = useRef<HTMLDivElement>(null);
 
@@ -38,30 +43,30 @@ function IncrementalBar({ barPrice, onValueChange, title = "Select Value" }: Pro
     const range = finalValue - initValue;
     let newValue = initValue + (percentage * range);
     
-    // Redondear al step más cercano
-    newValue = Math.round(newValue / step) * step;
+    // Redondear al progressValue más cercano (este es el incremento visual)
+    newValue = Math.round(newValue / progressValue) * progressValue;
     newValue = Math.max(initValue, Math.min(newValue, finalValue));
     
     if (handle === 'min') {
       // Si el min intenta superar al max, empujar max
       if (newValue >= maxValue) {
-        const newMax = Math.min(maxValue + step, finalValue);
+        const newMax = Math.min(maxValue + progressValue, finalValue);
         setMaxValue(newMax);
-        setMinValue(Math.min(newValue, newMax - step));
+        setMinValue(Math.min(newValue, newMax - progressValue));
       } else {
         setMinValue(newValue);
       }
     } else {
       // Si el max intenta bajar del min, empujar min
       if (newValue <= minValue) {
-        const newMin = Math.max(minValue - step, initValue);
+        const newMin = Math.max(minValue - progressValue, initValue);
         setMinValue(newMin);
-        setMaxValue(Math.max(newValue, newMin + step));
+        setMaxValue(Math.max(newValue, newMin + progressValue));
       } else {
         setMaxValue(newValue);
       }
     }
-  }, [initValue, finalValue, step, minValue, maxValue]);
+  }, [initValue, finalValue, progressValue, minValue, maxValue]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent, handle: 'min' | 'max') => {
     e.stopPropagation();

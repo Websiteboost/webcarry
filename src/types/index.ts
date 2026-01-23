@@ -13,11 +13,26 @@ export interface Category {
   services?: Service[];
 }
 
+export interface Breakpoint {
+  initValue: number;
+  finalValue: number;
+  step: number;
+}
+
+export interface DefaultRange {
+  start: number;
+  end: number;
+}
+
 export interface BarPrice {
   initValue: number;
   finalValue: number;
   step: number;
   label?: string;
+  mode?: 'simple' | 'breakpoints';
+  progressValue?: number;
+  defaultRange?: DefaultRange;
+  breakpoints?: Breakpoint[];
 }
 
 // Alias para uso en database services
