@@ -8,9 +8,23 @@ interface Props {
 }
 
 function IncrementalBar({ barPrice, onValueChange, title = "Select Value" }: Props) {
-  const { initValue, finalValue, defaultRange, progressValue = 1 } = barPrice;
+  const { defaultRange, progressValue = 1, mode, breakpoints } = barPrice;
   
-  // Usar defaultRange si está disponible, sino usar initValue y finalValue
+  // Calcular initValue y finalValue según el modo
+  let initValue: number;
+  let finalValue: number;
+  
+  if (mode === 'breakpoints' && breakpoints && breakpoints.length > 0) {
+    // En modo breakpoints, calcular límites desde los breakpoints
+    initValue = breakpoints[0].initValue;
+    finalValue = breakpoints[breakpoints.length - 1].finalValue;
+  } else {
+    // En modo simple o si no hay breakpoints, usar del nivel raíz
+    initValue = barPrice.initValue;
+    finalValue = barPrice.finalValue;
+  }
+  
+  // Usar defaultRange si está disponible, sino usar los límites calculados
   const initialMinValue = defaultRange?.start ?? initValue;
   const initialMaxValue = defaultRange?.end ?? finalValue;
   
