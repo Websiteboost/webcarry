@@ -87,16 +87,16 @@ export default function ServiceGrid({ initialServices, accordionContent, categor
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
         {[...Array(6)].map((_, index) => (
-          <div key={index} className="glass-effect rounded-md overflow-hidden border border-purple-neon/20">
+          <div key={index} className="glass-effect rounded-md overflow-hidden border border-purple-neon/20 flex flex-col">
             {/* Skeleton Image */}
             <div className="skeleton h-48 w-full"></div>
             {/* Skeleton Content */}
-            <div className="p-6 space-y-3">
+            <div className="p-6 space-y-3 flex flex-col grow">
               <div className="skeleton h-6 w-3/4"></div>
               <div className="skeleton h-4 w-full"></div>
               <div className="skeleton h-4 w-5/6"></div>
               <div className="skeleton h-4 w-4/6"></div>
-              <div className="skeleton h-8 w-20 mt-4"></div>
+              <div className="skeleton h-8 w-20 mt-auto"></div>
             </div>
           </div>
         ))}
@@ -127,7 +127,7 @@ export default function ServiceGrid({ initialServices, accordionContent, categor
               <div
                 key={service.id}
                 id={service.id}
-                className="glass-effect rounded-md overflow-hidden border border-purple-neon/20 card-hover group"
+                className="glass-effect rounded-md overflow-hidden border border-purple-neon/20 card-hover group flex flex-col"
               >
                 {/* Service Image with Gradient */}
                 <div className="relative h-48 w-full overflow-hidden bg-linear-to-br from-purple-neon/20 to-blue-neon/20">
@@ -157,10 +157,10 @@ export default function ServiceGrid({ initialServices, accordionContent, categor
                 </div>
 
                 {/* Service Content */}
-                <div className="p-7">
+                <div className="p-7 flex flex-col grow">
                   {/* Description Points */}
                   {service.description && service.description.length > 0 && (
-                    <ul className="space-y-2 mb-4">
+                    <ul className="space-y-2 mb-4" style={{minHeight: '120px'}}>
                       {service.description.map((point, index) => (
                         <li key={index} className="flex items-start text-sm text-cyber-white/80">
                           <svg className="w-5 h-5 text-green-neon mr-2 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
@@ -173,7 +173,7 @@ export default function ServiceGrid({ initialServices, accordionContent, categor
                   )}
 
                   {/* Price and CTA */}
-                  <div className="flex items-center justify-between mt-6 pt-4 border-t border-purple-neon/20">
+                  <div className="flex items-center justify-between mt-auto pt-4 border-t border-purple-neon/20">
                     <div className="flex items-center gap-2">
                       <span className="text-3xl font-bold text-cyber-white" style={{textShadow: '0 0 5px rgba(16,185,129,0.3), 0 0 10px rgba(16,185,129,0.2)'}}>${service.price}</span>
                       <span className="text-sm text-cyber-white/60">USD</span>

@@ -40,9 +40,9 @@ export default function CategorySidebar({ categories, currentCategoryId, onCateg
   }
 
   return (
-    <aside className="w-full h-screen sticky top-0 glass-effect p-8 border-r border-purple-neon/20 overflow-y-auto">
-      <h2 className="text-2xl font-bold text-pink-neon mb-8 neon-text">Categories</h2>
-      <nav className="space-y-2">
+    <div className="w-full glass-effect border-r border-purple-neon/20 p-8 flex flex-col" style={{height: 'calc(100vh - 8rem)'}}>
+      <h2 className="text-2xl font-bold text-pink-neon mb-8 neon-text shrink-0">Categories</h2>
+      <nav className="space-y-2 overflow-y-auto flex-1 pr-2 min-h-0">
         {categories.map((category) => {
           const isExpanded = expandedCategories.includes(category.id);
           const isActive = currentCategoryId === category.id;
@@ -99,6 +99,6 @@ export default function CategorySidebar({ categories, currentCategoryId, onCateg
           );
         })}
       </nav>
-    </aside>
+    </div>
   );
 }
