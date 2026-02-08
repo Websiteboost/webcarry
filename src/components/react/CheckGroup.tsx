@@ -1,4 +1,4 @@
-import { useState, useCallback, memo } from 'react';
+import { useState, useCallback, memo, useEffect } from 'react';
 import type { AdditionalOption } from '../../types';
 
 interface Props {
@@ -9,6 +9,12 @@ interface Props {
 
 function CheckGroup({ options, title = 'Additional Services', onSelectionChange }: Props) {
   const [selectedOptions, setSelectedOptions] = useState<Set<string>>(new Set());
+
+  // Reset selected options when options change (cuando cambia el servicio)
+  useEffect(() => {
+    setSelectedOptions(new Set());
+    onSelectionChange([]);
+  }, [options]);
 
   const handleToggle = useCallback((optionKey: string) => {
     const newSet = new Set(selectedOptions);

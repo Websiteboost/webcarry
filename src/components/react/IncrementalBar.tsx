@@ -31,7 +31,19 @@ function IncrementalBar({ barPrice, onValueChange, title = "Select Value" }: Pro
   const [minValue, setMinValue] = useState(initialMinValue);
   const [maxValue, setMaxValue] = useState(initialMaxValue);
   const [draggingHandle, setDraggingHandle] = useState<'min' | 'max' | null>(null);
+  const [minInputValue, setMinInputValue] = useState<string>(String(initialMinValue));
+  const [maxInputValue, setMaxInputValue] = useState<string>(String(initialMaxValue));
   const barRef = useRef<HTMLDivElement>(null);
+
+  // Reset values when barPrice changes (cuando cambia el servicio)
+  useEffect(() => {
+    const newInitialMin = defaultRange?.start ?? initValue;
+    const newInitialMax = defaultRange?.end ?? finalValue;
+    setMinValue(newInitialMin);
+    setMaxValue(newInitialMax);
+    setMinInputValue(String(newInitialMin));
+    setMaxInputValue(String(newInitialMax));
+  }, [barPrice, defaultRange?.start, defaultRange?.end, initValue, finalValue]);
 
   // Notificar cambios solo cuando sea necesario
   useEffect(() => {
@@ -126,6 +138,108 @@ function IncrementalBar({ barPrice, onValueChange, title = "Select Value" }: Pro
     }
   }, [draggingHandle, handleMouseMove, handleMouseUp, handleTouchMove]);
 
+  // Sincronizar inputs cuando los valores cambian por drag & drop
+  useEffect(() => {
+    setMinInputValue(String(minValue));
+  }, [minValue]);
+
+  useEffect(() => {
+    setMaxInputValue(String(maxValue));
+  }, [maxValue]);
+
+  // Manejar cambio manual del valor mínimo
+  const handleMinInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Permitir solo números
+    if (value === '' || /^\d+$/.test(value)) {
+      setMinInputValue(value);
+    }
+  }, []);
+
+  // Manejar cambio manual del valor máximo
+  const handleMaxInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Permitir solo números
+    if (value === '' || /^\d+$/.test(value)) {
+      setMaxInputValue(value);
+    }
+  }, []);
+
+  // Validar y aplicar el nuevo valor mínimo
+  const applyMinValue = useCallback(() => {
+    if (minInputValue === '') {
+      setMinInputValue(String(minValue));
+      return;
+    }
+
+    let newValue = parseInt(minInputValue);
+    
+    // Redondear al progressValue más cercano
+    newValue = Math.round(newValue / progressValue) * progressValue;
+    
+    // Validar límites: debe estar entre initValue y (finalValue - progressValue)
+    // No puede ser finalValue porque necesita espacio para maxValue
+    newValue = Math.max(initValue, Math.min(newValue, finalValue - progressValue));
+    
+    // Si el nuevo min >= maxValue actual, empujar maxValue
+    if (newValue >= maxValue) {
+      const newMax = Math.min(newValue + progressValue, finalValue);
+      setMaxValue(newMax);
+      setMaxInputValue(String(newMax));
+      // Ajustar min si es necesario
+      const adjustedMin = Math.min(newValue, newMax - progressValue);
+      setMinValue(adjustedMin);
+      setMinInputValue(String(adjustedMin));
+    } else {
+      setMinValue(newValue);
+      setMinInputValue(String(newValue));
+    }
+  }, [minInputValue, minValue, maxValue, progressValue, initValue, finalValue]);
+
+  // Validar y aplicar el nuevo valor máximo
+  const applyMaxValue = useCallback(() => {
+    if (maxInputValue === '') {
+      setMaxInputValue(String(maxValue));
+      return;
+    }
+
+    let newValue = parseInt(maxInputValue);
+    
+    // Redondear al progressValue más cercano
+    newValue = Math.round(newValue / progressValue) * progressValue;
+    
+    // Validar límites: debe estar entre (initValue + progressValue) y finalValue
+    // No puede ser initValue porque necesita espacio para minValue
+    newValue = Math.max(initValue + progressValue, Math.min(newValue, finalValue));
+    
+    // Si el nuevo max <= minValue actual, empujar minValue
+    if (newValue <= minValue) {
+      const newMin = Math.max(newValue - progressValue, initValue);
+      setMinValue(newMin);
+      setMinInputValue(String(newMin));
+      // Ajustar max si es necesario
+      const adjustedMax = Math.max(newValue, newMin + progressValue);
+      setMaxValue(adjustedMax);
+      setMaxInputValue(String(adjustedMax));
+    } else {
+      setMaxValue(newValue);
+      setMaxInputValue(String(newValue));
+    }
+  }, [maxInputValue, maxValue, minValue, progressValue, initValue, finalValue]);
+
+  // Manejar tecla Enter en los inputs
+  const handleMinKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.currentTarget.blur();
+    }
+  }, []);
+
+  const handleMaxKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.currentTarget.blur();
+    }
+  }, []);
+
   return (
     <div className="space-y-4">
       {/* Título */}
@@ -194,24 +308,40 @@ function IncrementalBar({ barPrice, onValueChange, title = "Select Value" }: Pro
           </div>
         </div>
 
-        {/* Valores actuales con rango */}
+        {/* Valores actuales con rango - Editables */}
         <div className="flex items-center justify-between gap-4">
           <div className="flex-1 text-center glass-effect rounded-md p-2 border border-pink-neon/20">
-            <span className="text-xs text-cyber-white/60 block mb-1">From</span>
-            <span className="text-xl font-bold text-pink-neon" style={{textShadow: '0 0 10px rgba(236, 72, 153, 0.6)'}}>
-              {minValue}
-            </span>
+            <label htmlFor="min-value-input" className="text-xs text-cyber-white/60 block mb-1">From</label>
+            <input
+              id="min-value-input"
+              type="text"
+              inputMode="numeric"
+              value={minInputValue}
+              onChange={handleMinInputChange}
+              onBlur={applyMinValue}
+              onKeyDown={handleMinKeyDown}
+              className="w-full text-xl font-bold text-pink-neon text-center bg-transparent border-none outline-none focus:ring-2 focus:ring-pink-neon/50 rounded px-1 transition-all"
+              style={{textShadow: '0 0 10px rgba(236, 72, 153, 0.6)'}}
+            />
           </div>
           
-          <svg className="w-5 h-5 text-purple-neon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 text-purple-neon shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
           </svg>
           
           <div className="flex-1 text-center glass-effect rounded-md p-2 border border-blue-neon/20">
-            <span className="text-xs text-cyber-white/60 block mb-1">To</span>
-            <span className="text-xl font-bold text-blue-neon" style={{textShadow: '0 0 10px rgba(56, 189, 248, 0.6)'}}>
-              {maxValue}
-            </span>
+            <label htmlFor="max-value-input" className="text-xs text-cyber-white/60 block mb-1">To</label>
+            <input
+              id="max-value-input"
+              type="text"
+              inputMode="numeric"
+              value={maxInputValue}
+              onChange={handleMaxInputChange}
+              onBlur={applyMaxValue}
+              onKeyDown={handleMaxKeyDown}
+              className="w-full text-xl font-bold text-blue-neon text-center bg-transparent border-none outline-none focus:ring-2 focus:ring-blue-neon/50 rounded px-1 transition-all"
+              style={{textShadow: '0 0 10px rgba(56, 189, 248, 0.6)'}}
+            />
           </div>
         </div>
       </div>

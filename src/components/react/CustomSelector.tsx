@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { SelectOption } from '../../types';
 
 interface Props {
@@ -10,6 +10,12 @@ interface Props {
 
 export default function CustomSelector({ title, options, onValueChange, selectorId }: Props) {
   const [selectedValue, setSelectedValue] = useState<number>(0);
+
+  // Reset selected value when selectorId or options change (cuando cambia el servicio)
+  useEffect(() => {
+    setSelectedValue(0);
+    onValueChange(0);
+  }, [selectorId, options]);
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = parseInt(e.target.value);

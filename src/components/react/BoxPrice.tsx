@@ -9,6 +9,11 @@ interface Props {
 function BoxPrice({ values, onSelectionChange }: Props) {
   const [selectedIndexes, setSelectedIndexes] = useState<Set<number>>(new Set());
 
+  // Reset selected indexes when values change (cuando cambia el servicio)
+  useEffect(() => {
+    setSelectedIndexes(new Set());
+  }, [values]);
+
   // Notificar cambios cuando selectedIndexes cambie
   useEffect(() => {
     const selectedValues = Array.from(selectedIndexes).map(idx => values[idx].value);
@@ -106,7 +111,7 @@ function BoxPrice({ values, onSelectionChange }: Props) {
               </span>
             </div>
             <span className="text-base font-bold text-green-neon">
-              +${Array.from(selectedIndexes).map(idx => values[idx].value).reduce((sum, val) => sum + val, 0)}
+              +${Math.round(Array.from(selectedIndexes).map(idx => values[idx].value).reduce((sum, val) => sum + val, 0) * 100) / 100}
             </span>
           </div>
         </div>

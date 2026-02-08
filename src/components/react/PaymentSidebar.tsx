@@ -151,6 +151,22 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
     };
   }, [isOpen]);
 
+  // Efecto para resetear todos los estados cuando cambia el servicio
+  useEffect(() => {
+    if (service) {
+      setSelectedPrice(null);
+      setCustomPrice('');
+      setBarMinValue(null);
+      setBarMaxValue(null);
+      setAdditionalValues([]);
+      setBoxValues([]);
+      setSelectorValues({});
+      setAcceptedTerms(false);
+      setSelectedPaymentMethod(null);
+      setShowPayPalButton(false);
+    }
+  }, [service?.id]);
+
   // Return condicional después de todos los hooks
   if (!service) return null;
 
@@ -200,7 +216,9 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
     // Sumar valores de selectores
     const selectorTotal = Object.values(selectorValues).reduce((sum, value) => sum + value, 0);
     
-    return basePrice + additionalTotal + selectorTotal;
+    // Calcular el total y redondear a 2 decimales para evitar errores de punto flotante
+    const total = basePrice + additionalTotal + selectorTotal;
+    return Math.round(total * 100) / 100;
   };
 
   const getPaymentDescription = () => {
@@ -257,7 +275,7 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
       }
     }
     
-    details.push(`Total: $${getFinalPrice()}`);
+    details.push(`Total: $${getFinalPrice().toFixed(2)}`);
     return details.join(' | ');
   };
 
@@ -590,7 +608,7 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
             
             <div className="flex items-center justify-between p-5 glass-effect rounded-md border border-purple-neon/30">
               <span className="text-cyber-white font-medium text-base">Total to pay:</span>
-              <span className="text-3xl font-bold text-cyber-white" style={{textShadow: '0 0 5px rgba(16,185,129,0.3), 0 0 10px rgba(16,185,129,0.2)'}}>${getFinalPrice()}</span>
+              <span className="text-3xl font-bold text-cyber-white" style={{textShadow: '0 0 5px rgba(16,185,129,0.3), 0 0 10px rgba(16,185,129,0.2)'}}>${getFinalPrice().toFixed(2)}</span>
             </div>
 
             {/* Mostrar botón de PayPal si está seleccionado y activado */}
