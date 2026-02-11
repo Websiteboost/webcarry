@@ -16,7 +16,11 @@ function BoxPrice({ values, onSelectionChange }: Props) {
 
   // Notificar cambios cuando selectedIndexes cambie
   useEffect(() => {
-    const selectedValues = Array.from(selectedIndexes).map(idx => values[idx].value);
+    const selectedValues = Array.from(selectedIndexes).map(idx => {
+      const value = values[idx].value;
+      const numValue = typeof value === 'string' ? parseFloat(value) : Number(value);
+      return isNaN(numValue) ? 0 : numValue;
+    });
     onSelectionChange(selectedValues);
   }, [selectedIndexes, values, onSelectionChange]);
 

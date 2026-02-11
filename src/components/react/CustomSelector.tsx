@@ -18,9 +18,10 @@ export default function CustomSelector({ title, options, onValueChange, selector
   }, [selectorId, options]);
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = parseInt(e.target.value);
-    setSelectedValue(value);
-    onValueChange(value);
+    const value = parseFloat(e.target.value);
+    const numValue = isNaN(value) ? 0 : value;
+    setSelectedValue(numValue);
+    onValueChange(numValue);
   };
 
   return (

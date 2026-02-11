@@ -64,8 +64,10 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
       // Modo simple: calcular el costo de SUBIR niveles
       // Del nivel 1 al 2 = 1 subida, del 1 al 10 = 9 subidas
       const { step } = barPrice;
+      const stepNum = typeof step === 'string' ? parseFloat(step) : Number(step);
+      const safeStep = isNaN(stepNum) ? 0 : stepNum;
       const rangeSize = maxValue - minValue;
-      return rangeSize * step;
+      return rangeSize * safeStep;
       
     } else if (mode === 'breakpoints') {
       // Modo breakpoints: calcular precio basado en múltiples rangos
@@ -80,6 +82,9 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
       for (const breakpoint of breakpoints) {
         const { initValue: bpInit, finalValue: bpFinal, step: bpStep } = breakpoint;
         
+        const bpStepNum = typeof bpStep === 'string' ? parseFloat(bpStep) : Number(bpStep);
+        const safeBpStep = isNaN(bpStepNum) ? 0 : bpStepNum;
+        
         // Calcular qué niveles de DESTINO caen en este breakpoint
         // Primer nivel de destino posible en este breakpoint
         const firstDest = Math.max(minValue + 1, bpInit);
@@ -90,7 +95,7 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
         if (firstDest <= lastDest) {
           // Cantidad de subidas = cantidad de destinos
           const numLevels = lastDest - firstDest + 1;
-          totalPrice += numLevels * bpStep;
+          totalPrice += numLevels * safeBpStep;
         }
         
         // Si ya pasamos el rango máximo, podemos salir del loop
@@ -178,8 +183,10 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
     }
   };
 
-  const handlePresetPriceSelect = (price: number) => {
-    setSelectedPrice(price);
+  const handlePresetPriceSelect = (price: number | string) => {
+    const numPrice = typeof price === 'string' ? parseFloat(price) : Number(price);
+    const safePrice = isNaN(numPrice) ? 0 : numPrice;
+    setSelectedPrice(safePrice);
     setCustomPrice('');
   };
 
@@ -188,33 +195,52 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
     
     // Si el servicio tiene barPrice, calcular usando la función helper
     if (service?.barPrice && barMinValue !== null && barMaxValue !== null) {
-      basePrice += calculateBarPrice(service.barPrice, barMinValue, barMaxValue);
+      const barTotal = calculateBarPrice(service.barPrice, barMinValue, barMaxValue);
+      const barTotalNum = typeof barTotal === 'string' ? parseFloat(barTotal) : Number(barTotal);
+      const safeBartotal = isNaN(barTotalNum) ? 0 : barTotalNum;
+      basePrice += safeBartotal;
     }
     
-    // Si tiene boxPrice, sumar los valores seleccionados
+    // Si tiene boxPrice, sumar los valores seleccionados (asegurar conversión a número)
     if (service?.boxPrice && boxValues.length > 0) {
-      basePrice += boxValues.reduce((sum, value) => sum + value, 0);
+      const boxTotal = boxValues.reduce((sum, value) => {
+        const numValue = typeof value === 'string' ? parseFloat(value) : Number(value);
+        return sum + (isNaN(numValue) ? 0 : numValue);
+      }, 0);
+      basePrice += boxTotal;
     }
     
     // Si tiene customPrice habilitado y hay valor
     if (service?.customPrice?.enabled) {
       if (customPrice) {
-        basePrice += parseInt(customPrice);
+        const custom = parseFloat(customPrice);
+        const safeCustom = isNaN(custom) ? 0 : custom;
+        basePrice += safeCustom;
       } else if (selectedPrice) {
-        basePrice += selectedPrice;
+        const safeSelected = typeof selectedPrice === 'string' ? parseFloat(selectedPrice) : Number(selectedPrice);
+        const safePrice = isNaN(safeSelected) ? 0 : safeSelected;
+        basePrice += safePrice;
       }
     }
     
     // Si no tiene ningún método de pricing, usar el precio base
     if (!service?.barPrice && !service?.boxPrice && !service?.customPrice?.enabled) {
-      basePrice = service?.price || 0;
+      const rawPrice = service?.price || 0;
+      basePrice = typeof rawPrice === 'string' ? parseFloat(rawPrice) : Number(rawPrice);
+      basePrice = isNaN(basePrice) ? 0 : basePrice;
     }
     
-    // Sumar valores adicionales
-    const additionalTotal = additionalValues.reduce((sum, value) => sum + value, 0);
+    // Sumar valores adicionales (asegurar conversión a número)
+    const additionalTotal = additionalValues.reduce((sum, value) => {
+      const numValue = typeof value === 'string' ? parseFloat(value) : Number(value);
+      return sum + (isNaN(numValue) ? 0 : numValue);
+    }, 0);
     
-    // Sumar valores de selectores
-    const selectorTotal = Object.values(selectorValues).reduce((sum, value) => sum + value, 0);
+    // Sumar valores de selectores (asegurar conversión a número)
+    const selectorTotal = Object.values(selectorValues).reduce((sum, value) => {
+      const numValue = typeof value === 'string' ? parseFloat(value) : Number(value);
+      return sum + (isNaN(numValue) ? 0 : numValue);
+    }, 0);
     
     // Calcular el total y redondear a 2 decimales para evitar errores de punto flotante
     const total = basePrice + additionalTotal + selectorTotal;
@@ -357,10 +383,10 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
           {/* Service Preview */}
           <div className="mb-6">
             <div className="relative h-40 rounded-md overflow-hidden mb-4 bg-linear-to-br from-purple-neon/20 to-blue-neon/20">
-              {imageLoading && !imageError && (
+              {imageLoading && !imageError && service.image && (
                 <div className="skeleton h-full w-full absolute inset-0"></div>
               )}
-              {imageError ? (
+              {imageError || !service.image ? (
                 <div className="h-full w-full flex items-center justify-center">
                   <svg className="w-16 h-16 text-purple-neon/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />

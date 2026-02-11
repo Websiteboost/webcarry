@@ -26,7 +26,14 @@ function CheckGroup({ options, title = 'Additional Services', onSelectionChange 
     setSelectedOptions(newSet);
     
     // Calcular y notificar después de determinar el nuevo estado
-    const values = Array.from(newSet).map(key => options[key]?.value || 0);
+    // Asegurar conversión a número y filtrar valores inválidos
+    const values = Array.from(newSet).map(key => {
+      const option = options[key];
+      const rawValue = option?.value;
+      const numValue = typeof rawValue === 'string' ? parseFloat(rawValue) : Number(rawValue);
+      return isNaN(numValue) ? 0 : numValue;
+    });
+    
     onSelectionChange(values);
   }, [selectedOptions, options, onSelectionChange]);
 
