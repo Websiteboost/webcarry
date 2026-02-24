@@ -8,20 +8,37 @@ interface Props {
   selectorId: string;
 }
 
-export default function CustomSelector({ title, options, onValueChange, selectorId }: Props) {
-  const [selectedValue, setSelectedValue] = useState<number>(0);
+// Genera una clave única para cada opción usando su índice y valor.
+// Formato: "índice:valor" → siempre único, y el valor numérico real es recuperable.
+function makeOptionKey(index: number, value: number): string {
+  return `${index}:${value}`;
+}
 
-  // Reset selected value when selectorId or options change (cuando cambia el servicio)
+// Extrae el valor numérico real de una clave compuesta "índice:valor".
+function parseOptionKey(key: string): number {
+  const parts = key.split(':');
+  const num = parseFloat(parts[1]);
+  return isNaN(num) ? 0 : num;
+}
+
+export default function CustomSelector({ title, options, onValueChange, selectorId }: Props) {
+  // Estado guardado como clave compuesta para evitar colisiones entre opciones con el mismo valor
+  const [selectedKey, setSelectedKey] = useState<string>('');
+
+  // Reset cuando cambia el servicio
   useEffect(() => {
-    setSelectedValue(0);
+    setSelectedKey('');
     onValueChange(0);
   }, [selectorId, options]);
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = parseFloat(e.target.value);
-    const numValue = isNaN(value) ? 0 : value;
-    setSelectedValue(numValue);
-    onValueChange(numValue);
+    const raw = e.target.value;
+    setSelectedKey(raw);
+    if (raw === '') {
+      onValueChange(0);
+    } else {
+      onValueChange(parseOptionKey(raw));
+    }
   };
 
   return (
@@ -33,16 +50,16 @@ export default function CustomSelector({ title, options, onValueChange, selector
       <div className="relative">
         <select
           id={selectorId}
-          value={selectedValue}
+          value={selectedKey}
           onChange={handleChange}
           style={{
             backgroundImage: 'none',
           }}
           className="w-full bg-purple-dark/30 border-2 border-purple-neon/30 rounded-md py-4 px-4 pr-10 text-base text-cyber-white focus:border-purple-neon focus:outline-none transition-colors appearance-none cursor-pointer [&>option]:bg-[#1a0b2e] [&>option]:text-[#e0e7ff] [&>option]:py-3 [&>option]:px-4 [&>option:checked]:bg-purple-neon/20 [&>option:checked]:text-purple-neon"
         >
-          <option value="0">Choose...</option>
+          <option value="">Choose...</option>
           {options.map((option, index) => (
-            <option key={index} value={option.value}>
+            <option key={index} value={makeOptionKey(index, option.value)}>
               {option.label} {option.value > 0 ? `+$${option.value}` : ''}
             </option>
           ))}

@@ -161,8 +161,26 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
     if (service) {
       setSelectedPrice(null);
       setCustomPrice('');
-      setBarMinValue(null);
-      setBarMaxValue(null);
+      // Inicializar con los valores por defecto del barPrice en vez de null.
+      // Esto evita que el padre sobreescriba con null DESPUÉS de que IncrementalBar
+      // ya notificó sus valores iniciales (los efectos de hijos corren antes que los padres).
+      if (service.barPrice) {
+        const bp = service.barPrice;
+        let initMin: number;
+        let initMax: number;
+        if (bp.mode === 'breakpoints' && bp.breakpoints && bp.breakpoints.length > 0) {
+          initMin = bp.defaultRange?.start ?? bp.breakpoints[0].initValue;
+          initMax = bp.defaultRange?.end ?? bp.breakpoints[bp.breakpoints.length - 1].finalValue;
+        } else {
+          initMin = bp.defaultRange?.start ?? bp.initValue;
+          initMax = bp.defaultRange?.end ?? bp.finalValue;
+        }
+        setBarMinValue(initMin);
+        setBarMaxValue(initMax);
+      } else {
+        setBarMinValue(null);
+        setBarMaxValue(null);
+      }
       setAdditionalValues([]);
       setBoxValues([]);
       setSelectorValues({});

@@ -82,7 +82,8 @@ export default function CategorySidebar({ categories, currentCategoryId, onCateg
                 }`}
               >
                 {category.services && category.services.length > 0 && (
-                  <div className="ml-4 space-y-1 border-l-2 border-blue-neon/30 pl-4">
+                  <div className="ml-4 border-l-2 border-blue-neon/30 pl-4 overflow-y-auto max-h-64 pr-1">
+                    <div className="space-y-1">
                     {category.services.map((service: any) => (
                       <a
                         key={service.id}
@@ -92,6 +93,7 @@ export default function CategorySidebar({ categories, currentCategoryId, onCateg
                         {service.title}
                       </a>
                     ))}
+                    </div>
                   </div>
                 )}
               </div>
