@@ -27,11 +27,10 @@ export default function CategorySidebar({ categories, currentCategoryId, onCateg
   };
 
   const handleCategoryClick = (categoryId: string) => {
+    // Alternar expansión y notificar al padre
+    toggleCategory(categoryId);
     if (onCategoryChange) {
       onCategoryChange(categoryId);
-    }
-    if (!expandedCategories.includes(categoryId)) {
-      setExpandedCategories(prev => [...prev, categoryId]);
     }
   };
 
@@ -42,7 +41,7 @@ export default function CategorySidebar({ categories, currentCategoryId, onCateg
   return (
     <div className="w-full glass-effect border-r border-purple-neon/20 p-8 flex flex-col" style={{height: 'calc(100vh - 8rem)'}}>
       <h2 className="text-2xl font-bold text-pink-neon mb-8 neon-text shrink-0">Categories</h2>
-      <nav className="space-y-2 overflow-y-auto flex-1 pr-2 min-h-0">
+      <nav className="space-y-2 overflow-y-auto flex-1 pr-2 min-h-0 [&::-webkit-scrollbar]:w-0" style={{ scrollbarWidth: 'none' }}>
         {categories.map((category) => {
           const isExpanded = expandedCategories.includes(category.id);
           const isActive = currentCategoryId === category.id;
@@ -51,10 +50,10 @@ export default function CategorySidebar({ categories, currentCategoryId, onCateg
             <div key={category.id}>
               {/* Category Header */}
               <button
-                onClick={() => toggleCategory(category.id)}
+                onClick={() => handleCategoryClick(category.id)}
                 className={`w-full flex items-center justify-between px-5 py-4 rounded-md transition-all ${
                   isActive
-                    ? 'bg-purple-neon/20 border border-purple-neon/50 text-purple-neon'
+                    ? 'bg-purple-neon/20 border-purple-neon/50 text-purple-neon'
                     : 'hover:bg-purple-neon/10 text-cyber-white border border-transparent'
                 }`}
               >
@@ -82,7 +81,7 @@ export default function CategorySidebar({ categories, currentCategoryId, onCateg
                 }`}
               >
                 {category.services && category.services.length > 0 && (
-                  <div className="ml-4 border-l-2 border-blue-neon/30 pl-4 overflow-y-auto max-h-64 pr-1">
+                  <div className="ml-4 border-l-2 border-blue-neon/30 pl-4 overflow-y-auto max-h-64 pr-1 [&::-webkit-scrollbar]:w-0" style={{ scrollbarWidth: 'none' }}>
                     <div className="space-y-1">
                     {category.services.map((service: any) => (
                       <a

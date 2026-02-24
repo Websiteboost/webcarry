@@ -5,6 +5,7 @@ import type { Category } from '../../types';
 interface Props {
   categories: Category[];
   currentCategoryId?: string;
+  onCategoryChange?: (categoryId: string) => void;
 }
 
 const getIcon = (iconName: string) => {
@@ -12,7 +13,7 @@ const getIcon = (iconName: string) => {
   return Icon || Icons.Package;
 };
 
-export default function MobileMenu({ categories, currentCategoryId }: Props) {
+export default function MobileMenu({ categories, currentCategoryId, onCategoryChange }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<string[]>(
     currentCategoryId ? [currentCategoryId] : []
@@ -81,7 +82,10 @@ export default function MobileMenu({ categories, currentCategoryId }: Props) {
                 <div key={category.id}>
                   {/* Category Header */}
                   <button
-                    onClick={() => toggleCategory(category.id)}
+                    onClick={() => {
+                      toggleCategory(category.id);
+                      onCategoryChange?.(category.id);
+                    }}
                     className={`w-full flex items-center justify-between px-5 py-4 rounded-md transition-all ${
                       isActive
                         ? 'bg-purple-neon/20 border border-purple-neon/50 text-purple-neon'
