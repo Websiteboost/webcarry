@@ -15,6 +15,8 @@ export interface Footer {
   discordLink?: string;
   discordWorkUs?: string;
   paymentMethods: PaymentMethod[];
+  /** USD value of 1 EUR (e.g. 1.08 means 1 EUR = $1.08 USD) */
+  euroValue: number;
 }
 
 /**
@@ -23,7 +25,7 @@ export interface Footer {
 export async function getFooterContent(): Promise<Footer> {
   // Obtener site_config para los textos
   const configRows = await sql`
-    SELECT footer_payment_title, footer_copyright, disclaimer, discord_link, discord_work_us
+    SELECT footer_payment_title, footer_copyright, disclaimer, discord_link, discord_work_us, euro_value
     FROM site_config
     WHERE id = 1
     LIMIT 1
@@ -48,6 +50,7 @@ export async function getFooterContent(): Promise<Footer> {
     disclaimer: config.disclaimer || 'All services are provided for entertainment purposes only.',
     discordLink: config.discord_link,
     discordWorkUs: config.discord_work_us,
+    euroValue: Number(config.euro_value ?? 1.08),
     paymentMethods: paymentRows.map(row => ({
       name: row.name,
       type: row.type as 'paypal' | 'card',

@@ -1,13 +1,14 @@
-import { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import type { Service, Region, AccordionContent } from '../../types';
-import IncrementalBar from './IncrementalBar';
-import CheckGroup from './CheckGroup';
-import BoxPrice from './BoxPrice';
-import BoxTitle from './BoxTitle';
-import TitleService from './TitleService';
 import Accordion from './Accordion';
-import CustomSelector from './CustomSelector';
-import PayPalButton from './PayPalButton';
+import { usePaymentState } from './payment/usePaymentState';
+import { usePaymentPrice } from './payment/usePaymentPrice';
+import { useDiscount } from './payment/useDiscount';
+import { useSidebarEffects } from './payment/useSidebarEffects';
+import ServicePreview from './payment/ServicePreview';
+import ServiceComponentRenderer from './payment/ServiceComponentRenderer';
+import PaymentCheckout from './payment/PaymentCheckout';
+import { useCurrency } from '../../hooks/useCurrency';
 
 interface Props {
   service: Service | null;
@@ -15,349 +16,45 @@ interface Props {
   onClose: () => void;
   accordionContent: AccordionContent;
   paymentDisclaimer?: string;
+  euroValue?: number;
 }
 
-export default function PaymentSidebar({ service, isOpen, onClose, accordionContent, paymentDisclaimer }: Props) {
-  const [selectedRegion, setSelectedRegion] = useState<Region>('US');
-  const [selectedPrice, setSelectedPrice] = useState<number | null>(null);
-  const [customPrice, setCustomPrice] = useState<string>('');
-  const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'paypal' | 'card' | null>(null);
-  const [isVisible, setIsVisible] = useState(false);
-  const [barMinValue, setBarMinValue] = useState<number | null>(null);
-  const [barMaxValue, setBarMaxValue] = useState<number | null>(null);
-  const [additionalValues, setAdditionalValues] = useState<number[]>([]);
-  const [boxValues, setBoxValues] = useState<number[]>([]);
-  const [selectorValues, setSelectorValues] = useState<Record<string, number>>({});
-  const [imageError, setImageError] = useState(false);
-  const [imageLoading, setImageLoading] = useState(true);
-  const [showPayPalButton, setShowPayPalButton] = useState(false);
+export default function PaymentSidebar({ service, isOpen, onClose, accordionContent, paymentDisclaimer, euroValue = 1.08 }: Props) {
+  const { formatPrice, symbol } = useCurrency(euroValue);
+  const ps = usePaymentState(service);
+  const discount = useDiscount(service?.id ?? undefined);
+  const { isVisible, imageError, setImageError, imageLoading, setImageLoading } = useSidebarEffects(isOpen, service?.id);
+  const { getBasePrice, getFinalPrice, getDiscountAmount, getPaymentDescription, getEstimatedTime } = usePaymentPrice(service, {
+    barMinValue: ps.barMinValue,
+    barMaxValue: ps.barMaxValue,
+    boxValues: ps.boxValues,
+    selectorValues: ps.selectorValues,
+    additionalValues: ps.additionalValues,
+    selectedPrice: ps.selectedPrice,
+    customPrice: ps.customPrice,
+    selectedRegion: ps.selectedRegion,
+    boxtitleSelected: ps.boxtitleSelected,
+    appliedDiscount: discount.applied,
+  });
 
-  // Todos los hooks deben estar antes de cualquier return condicional
-  const handleBarValueChange = useCallback((minValue: number, maxValue: number) => {
-    setBarMinValue(minValue);
-    setBarMaxValue(maxValue);
-  }, []);
-
-  const handleAdditionalServicesChange = useCallback((values: number[]) => {
-    setAdditionalValues(values);
-  }, []);
-
-  const handleBoxPriceChange = useCallback((values: number[]) => {
-    setBoxValues(values);
-  }, []);
-
-  const handleSelectorChange = useCallback((selectorId: string, value: number) => {
-    setSelectorValues(prev => ({
-      ...prev,
-      [selectorId]: value
-    }));
-  }, []);
-
-  // Función helper para calcular el precio de la barra según el modo
-  const calculateBarPrice = useCallback((barPrice: any, minValue: number, maxValue: number) => {
-    if (!barPrice || minValue === null || maxValue === null) return 0;
-    
-    const mode = barPrice.mode || 'simple';
-    
-    if (mode === 'simple') {
-      // Modo simple: calcular el costo de SUBIR niveles
-      // Del nivel 1 al 2 = 1 subida, del 1 al 10 = 9 subidas
-      const { step } = barPrice;
-      const stepNum = typeof step === 'string' ? parseFloat(step) : Number(step);
-      const safeStep = isNaN(stepNum) ? 0 : stepNum;
-      const rangeSize = maxValue - minValue;
-      return rangeSize * safeStep;
-      
-    } else if (mode === 'breakpoints') {
-      // Modo breakpoints: calcular precio basado en múltiples rangos
-      // Cada breakpoint tiene su propio precio (step) por nivel
-      const { breakpoints } = barPrice;
-      if (!breakpoints || breakpoints.length === 0) return 0;
-      
-      let totalPrice = 0;
-      
-      // Recorrer cada breakpoint y calcular el precio por segmento
-      // La lógica: contar subidas cuyo DESTINO cae dentro del breakpoint
-      for (const breakpoint of breakpoints) {
-        const { initValue: bpInit, finalValue: bpFinal, step: bpStep } = breakpoint;
-        
-        const bpStepNum = typeof bpStep === 'string' ? parseFloat(bpStep) : Number(bpStep);
-        const safeBpStep = isNaN(bpStepNum) ? 0 : bpStepNum;
-        
-        // Calcular qué niveles de DESTINO caen en este breakpoint
-        // Primer nivel de destino posible en este breakpoint
-        const firstDest = Math.max(minValue + 1, bpInit);
-        // Último nivel de destino posible en este breakpoint
-        const lastDest = Math.min(maxValue, bpFinal);
-        
-        // Si hay subidas con destino en este breakpoint
-        if (firstDest <= lastDest) {
-          // Cantidad de subidas = cantidad de destinos
-          const numLevels = lastDest - firstDest + 1;
-          totalPrice += numLevels * safeBpStep;
-        }
-        
-        // Si ya pasamos el rango máximo, podemos salir del loop
-        if (maxValue <= bpFinal) break;
-      }
-      
-      return totalPrice;
-    }
-    
-    return 0;
-  }, []);
-
-  useEffect(() => {
-    if (isOpen) {
-      // Forzar un reflow para que la animación funcione en la primera apertura
-      requestAnimationFrame(() => {
-        setIsVisible(true);
-      });
-      // Bloquear scroll del body cuando el sidebar está abierto
-      document.body.style.overflow = 'hidden';
-      // Reset image state cuando se abre con un nuevo servicio
-      setImageError(false);
-      setImageLoading(true);
-    } else {
-      setIsVisible(false);
-      // Restaurar scroll del body cuando el sidebar se cierra
-      document.body.style.overflow = '';
-    }
-
-    // Cleanup: restaurar scroll cuando el componente se desmonta
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isOpen, service?.id]);
-
-  // Efecto para manejar el scroll del aside y actualizar el logo en mobile
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleAsideScroll = (e: Event) => {
-      const target = e.target as HTMLElement;
-      if (target && window.innerWidth < 1024) { // Solo en mobile/tablet (< lg)
-        // Simular evento de scroll en window para que el script del logo funcione
-        const scrollEvent = new Event('scroll');
-        window.dispatchEvent(scrollEvent);
-      }
-    };
-
-    const aside = document.querySelector('aside');
-    if (aside) {
-      aside.addEventListener('scroll', handleAsideScroll);
-    }
-
-    return () => {
-      if (aside) {
-        aside.removeEventListener('scroll', handleAsideScroll);
-      }
-    };
-  }, [isOpen]);
-
-  // Efecto para resetear todos los estados cuando cambia el servicio
-  useEffect(() => {
-    if (service) {
-      setSelectedPrice(null);
-      setCustomPrice('');
-      // Inicializar con los valores por defecto del barPrice en vez de null.
-      // Esto evita que el padre sobreescriba con null DESPUÉS de que IncrementalBar
-      // ya notificó sus valores iniciales (los efectos de hijos corren antes que los padres).
-      if (service.barPrice) {
-        const bp = service.barPrice;
-        let initMin: number;
-        let initMax: number;
-        if (bp.mode === 'breakpoints' && bp.breakpoints && bp.breakpoints.length > 0) {
-          initMin = bp.defaultRange?.start ?? bp.breakpoints[0].initValue;
-          initMax = bp.defaultRange?.end ?? bp.breakpoints[bp.breakpoints.length - 1].finalValue;
-        } else {
-          initMin = bp.defaultRange?.start ?? bp.initValue;
-          initMax = bp.defaultRange?.end ?? bp.finalValue;
-        }
-        setBarMinValue(initMin);
-        setBarMaxValue(initMax);
-      } else {
-        setBarMinValue(null);
-        setBarMaxValue(null);
-      }
-      setAdditionalValues([]);
-      setBoxValues([]);
-      setSelectorValues({});
-      setAcceptedTerms(false);
-      setSelectedPaymentMethod(null);
-      setShowPayPalButton(false);
-    }
-  }, [service?.id]);
-
-  // Return condicional después de todos los hooks
   if (!service) return null;
 
-  const handleCustomPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    if (value === '' || /^\d+$/.test(value)) {
-      setCustomPrice(value);
-      setSelectedPrice(null);
-    }
+  const handlers = {
+    onBarValueChange: ps.handleBarValueChange,
+    onBoxPriceChange: ps.handleBoxPriceChange,
+    onSelectorChange: ps.handleSelectorChange,
+    onSelectorSelectionChange: ps.handleSelectorSelectionChange,
+    onBoxTitleChange: ps.handleBoxTitleChange,
+    onAdditionalServicesChange: ps.handleAdditionalServicesChange,
+    onCustomPriceChange: ps.handleCustomPriceChange,
+    onPresetPriceSelect: ps.handlePresetPriceSelect,
   };
 
-  const handlePresetPriceSelect = (price: number | string) => {
-    const numPrice = typeof price === 'string' ? parseFloat(price) : Number(price);
-    const safePrice = isNaN(numPrice) ? 0 : numPrice;
-    setSelectedPrice(safePrice);
-    setCustomPrice('');
-  };
-
-  const getFinalPrice = () => {
-    let basePrice = 0;
-    
-    // Si el servicio tiene barPrice, calcular usando la función helper
-    if (service?.barPrice && barMinValue !== null && barMaxValue !== null) {
-      const barTotal = calculateBarPrice(service.barPrice, barMinValue, barMaxValue);
-      const barTotalNum = typeof barTotal === 'string' ? parseFloat(barTotal) : Number(barTotal);
-      const safeBartotal = isNaN(barTotalNum) ? 0 : barTotalNum;
-      basePrice += safeBartotal;
-    }
-    
-    // Si tiene boxPrice, sumar los valores seleccionados (asegurar conversión a número)
-    if (service?.boxPrice && boxValues.length > 0) {
-      const boxTotal = boxValues.reduce((sum, value) => {
-        const numValue = typeof value === 'string' ? parseFloat(value) : Number(value);
-        return sum + (isNaN(numValue) ? 0 : numValue);
-      }, 0);
-      basePrice += boxTotal;
-    }
-    
-    // Si tiene customPrice habilitado y hay valor
-    if (service?.customPrice?.enabled) {
-      if (customPrice) {
-        const custom = parseFloat(customPrice);
-        const safeCustom = isNaN(custom) ? 0 : custom;
-        basePrice += safeCustom;
-      } else if (selectedPrice) {
-        const safeSelected = typeof selectedPrice === 'string' ? parseFloat(selectedPrice) : Number(selectedPrice);
-        const safePrice = isNaN(safeSelected) ? 0 : safeSelected;
-        basePrice += safePrice;
-      }
-    }
-    
-    // Si no tiene ningún método de pricing, usar el precio base
-    if (!service?.barPrice && !service?.boxPrice && !service?.customPrice?.enabled) {
-      const rawPrice = service?.price || 0;
-      basePrice = typeof rawPrice === 'string' ? parseFloat(rawPrice) : Number(rawPrice);
-      basePrice = isNaN(basePrice) ? 0 : basePrice;
-    }
-    
-    // Sumar valores adicionales (asegurar conversión a número)
-    const additionalTotal = additionalValues.reduce((sum, value) => {
-      const numValue = typeof value === 'string' ? parseFloat(value) : Number(value);
-      return sum + (isNaN(numValue) ? 0 : numValue);
-    }, 0);
-    
-    // Sumar valores de selectores (asegurar conversión a número)
-    const selectorTotal = Object.values(selectorValues).reduce((sum, value) => {
-      const numValue = typeof value === 'string' ? parseFloat(value) : Number(value);
-      return sum + (isNaN(numValue) ? 0 : numValue);
-    }, 0);
-    
-    // Calcular el total y redondear a 2 decimales para evitar errores de punto flotante
-    const total = basePrice + additionalTotal + selectorTotal;
-    return Math.round(total * 100) / 100;
-  };
-
-  const getPaymentDescription = () => {
-    const details: string[] = [`${service.title} - Region: ${selectedRegion}`];
-    
-    // Agregar detalles de barPrice si aplica
-    if (service?.barPrice && barMinValue !== null && barMaxValue !== null) {
-      details.push(`${service.barPrice.label}: ${barMinValue} to ${barMaxValue}`);
-    }
-    
-    // Agregar detalles de boxPrice si aplica
-    if (service?.boxPrice && boxValues.length > 0) {
-      const selectedBoxes = service.boxPrice
-        .map((box, index) => boxValues.includes(box.value) ? box.label || `$${box.value}` : null)
-        .filter(Boolean);
-      if (selectedBoxes.length > 0) {
-        details.push(`Selected: ${selectedBoxes.join(', ')}`);
-      }
-    }
-    
-    // Agregar precio personalizado si aplica
-    if (service?.customPrice?.enabled) {
-      if (customPrice) {
-        details.push(`${service.customPrice.label || 'Amount'}: $${customPrice}`);
-      } else if (selectedPrice) {
-        details.push(`${service.customPrice.label || 'Amount'}: $${selectedPrice}`);
-      }
-    }
-    
-    // Agregar servicios adicionales si aplica
-    if (service?.additionalServices && additionalValues.length > 0) {
-      const selectedAdditional = Object.entries(service.additionalServices)
-        .map(([label, option]) => additionalValues.includes(option.value) ? label : null)
-        .filter(Boolean);
-      if (selectedAdditional.length > 0) {
-        details.push(`Extras: ${selectedAdditional.join(', ')}`);
-      }
-    }
-    
-    // Agregar selectores personalizados si aplica
-    if (service?.selectors && Object.keys(selectorValues).length > 0) {
-      const selectorDetails = Object.entries(service.selectors).map(([title, options], index) => {
-        const selectorId = `${service.id}-selector-${index}`;
-        const selectedValue = selectorValues[selectorId];
-        if (selectedValue !== undefined) {
-          const selectedOption = options.find(opt => opt.value === selectedValue);
-          return selectedOption ? `${title}: ${selectedOption.label}` : null;
-        }
-        return null;
-      }).filter(Boolean);
-      
-      if (selectorDetails.length > 0) {
-        details.push(selectorDetails.join(', '));
-      }
-    }
-    
-    details.push(`Total: $${getFinalPrice().toFixed(2)}`);
-    return details.join(' | ');
-  };
-
-  const handlePayment = () => {
-    if (!acceptedTerms || !selectedPaymentMethod) {
-      alert('Please accept the policies and select a payment method');
-      return;
-    }
-    
-    if (selectedPaymentMethod === 'card') {
-      alert('Card payment coming soon');
-    } else if (selectedPaymentMethod === 'paypal') {
-      setShowPayPalButton(true);
-    }
-  };
-
-  const handlePayPalSuccess = (details: any) => {
-    console.log('Payment successful!', details);
-    alert(`✓ Payment successful!\n\nOrder ID: ${details.id}\nAmount: $${details.purchase_units[0].amount.value} ${details.purchase_units[0].amount.currency_code}\n\nThank you for your purchase!`);
-    setShowPayPalButton(false);
-    // onClose(); // Descomentar si quieres cerrar el sidebar automáticamente
-  };
-
-  const handlePayPalError = (error: any) => {
-    console.error('PayPal error:', error);
-    alert('Payment failed. Please try again.');
-    setShowPayPalButton(false);
-  };
-
-  const handlePayPalCancel = () => {
-    setShowPayPalButton(false);
-  };
-
-  return (
+  return createPortal(
     <>
       {/* Overlay */}
-      <div 
-        className={`fixed top-0 left-0 w-screen h-screen bg-black/60 backdrop-blur-sm z-40 transition-opacity duration-300 ${
+      <div
+        className={`fixed top-0 left-0 w-screen h-screen bg-black/60 backdrop-blur-sm z-200 transition-opacity duration-300 ${
           isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
         onClick={onClose}
@@ -365,7 +62,7 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
 
       {/* Desktop Accordion - Centered Left on Overlay */}
       {isOpen && (
-        <div className="hidden lg:block fixed left-0 top-0 bottom-0 right-0 z-45 pointer-events-none">
+        <div className="hidden lg:block fixed left-0 top-0 bottom-0 right-0 z-201 pointer-events-none">
           <div className="flex items-center justify-center h-full pr-125 xl:pr-155 pl-20 py-16 pt-48">
             <div className="pointer-events-auto w-full max-w-3xl max-h-[calc(100vh-8rem)] overflow-y-auto">
               <div className="glass-effect rounded-lg p-6 border border-purple-neon/30 shadow-2xl">
@@ -378,326 +75,109 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
 
       {/* Sidebar */}
       {isOpen && (
-        <aside 
-          className={`fixed top-0 right-0 h-full w-full sm:w-120 glass-effect border-l border-purple-neon/30 z-40 lg:z-50 overflow-y-auto transition-transform duration-300 ease-in-out ${
+        <aside
+          className={`fixed top-0 right-0 h-full w-full sm:w-120 glass-effect border-l border-purple-neon/30 z-202 overflow-y-auto transition-transform duration-300 ease-in-out ${
             isVisible ? 'translate-x-0' : 'translate-x-full'
           }`}
         >
-        <div className="p-6 pb-32 sm:pb-6 pt-32 lg:pt-6">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-pink-neon neon-text">Checkout</h2>
-            <button
-              onClick={onClose}
-              className="text-cyber-white hover:text-pink-neon transition-colors p-2"
-              aria-label="Close"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-
-          {/* Service Preview */}
-          <div className="mb-6">
-            <div className="relative h-40 rounded-md overflow-hidden mb-4 bg-linear-to-br from-purple-neon/20 to-blue-neon/20">
-              {imageLoading && !imageError && service.image && (
-                <div className="skeleton h-full w-full absolute inset-0"></div>
-              )}
-              {imageError || !service.image ? (
-                <div className="h-full w-full flex items-center justify-center">
-                  <svg className="w-16 h-16 text-purple-neon/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </div>
-              ) : (
-                <img 
-                  src={service.image} 
-                  alt={service.title}
-                  className={`h-full w-full object-cover transition-opacity duration-300 ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
-                  loading="eager"
-                  onLoad={() => setImageLoading(false)}
-                  onError={() => {
-                    setImageLoading(false);
-                    setImageError(true);
-                  }}
-                />
-              )}
-              <div className="absolute inset-0 bg-linear-to-b from-transparent via-purple-dark/60 to-purple-dark"></div>
-              <div className="absolute bottom-0 left-0 right-0 p-4">
-                <h3 className="text-xl font-bold text-cyber-white">{service.title}</h3>
-              </div>
+          <div className="p-6 pb-32 sm:pb-6 pt-32 lg:pt-6">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-pink-neon neon-text">Checkout</h2>
+              <button
+                onClick={onClose}
+                className="text-cyber-white hover:text-pink-neon transition-colors p-2"
+                aria-label="Close"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
-            
-            {service.service_points && Array.isArray(service.service_points) && service.service_points.length > 0 && (
-              <ul className="space-y-2">
-                {service.service_points.map((point, index) => (
-                  point ? (
-                    <li key={index} className="flex items-start text-sm text-cyber-white/80">
-                      <svg className="w-4 h-4 text-green-neon mr-2 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                      <span>{point}</span>
-                    </li>
-                  ) : null
+
+            <ServicePreview
+              service={service}
+              imageError={imageError}
+              imageLoading={imageLoading}
+              onImageLoad={() => setImageLoading(false)}
+              onImageError={() => { setImageLoading(false); setImageError(true); }}
+            />
+
+            {/* Region Selection */}
+            <div className="mb-6">
+              <label className="block text-base font-medium text-cyber-white mb-3">
+                Select Region
+              </label>
+              <div className="flex gap-3">
+                {(['EU', 'US'] as Region[]).map((region) => (
+                  <button
+                    key={region}
+                    onClick={() => ps.setSelectedRegion(region)}
+                    className={`flex-1 py-4 px-5 rounded-md font-semibold text-base transition-all ${
+                      ps.selectedRegion === region
+                        ? 'bg-blue-neon/20 border-2 border-blue-neon text-blue-neon'
+                        : 'bg-purple-dark/30 border-2 border-transparent text-cyber-white hover:border-purple-neon/50'
+                    }`}
+                  >
+                    {region}
+                  </button>
                 ))}
-              </ul>
-            )}
-          </div>
-
-          {/* Region Selection */}
-          <div className="mb-6">
-            <label className="block text-base font-medium text-cyber-white mb-3">
-              Select Region
-            </label>
-            <div className="flex gap-3">
-              {(['EU', 'US'] as Region[]).map((region) => (
-                <button
-                  key={region}
-                  onClick={() => setSelectedRegion(region)}
-                  className={`flex-1 py-4 px-5 rounded-md font-semibold text-base transition-all ${
-                    selectedRegion === region
-                      ? 'bg-blue-neon/20 border-2 border-blue-neon text-blue-neon'
-                      : 'bg-purple-dark/30 border-2 border-transparent text-cyber-white hover:border-purple-neon/50'
-                  }`}
-                >
-                  {region}
-                </button>
-              ))}
+              </div>
             </div>
-          </div>
 
-          {/* Renderizar componentes en el orden de creación */}
-          {service.components && service.components.map((component, idx) => {
-            switch (component.type) {
-              case 'labeltitle':
-                return (
-                  <TitleService 
-                    key={`${component.id}-${idx}`}
-                    title={component.data?.title || ''}
-                  />
-                );
-              
-              case 'bar':
-                return service.barPrice ? (
-                  <div key={`${component.id}-${idx}`} className="mb-6">
-                    <IncrementalBar 
-                      barPrice={service.barPrice} 
-                      onValueChange={handleBarValueChange}
-                      title={service.barPrice.label}
-                    />
-                  </div>
-                ) : null;
-              
-              case 'box':
-                return service.boxPrice && service.boxPrice.length > 0 ? (
-                  <div key={`${component.id}-${idx}`} className="mb-6">
-                    <BoxPrice 
-                      values={service.boxPrice}
-                      onSelectionChange={handleBoxPriceChange}
-                    />
-                  </div>
-                ) : null;
-              
-              case 'boxtitle':
-                return component.data?.options && Array.isArray(component.data.options) && component.data.options.length > 0 ? (
-                  <div key={`${component.id}-${idx}`} className="mb-6">
-                    <BoxTitle options={component.data.options} />
-                  </div>
-                ) : null;
-              
-              case 'custom':
-                return service.customPrice?.enabled ? (
-                  <div key={`${component.id}-${idx}`} className="mb-6">
-                    <label className="block text-base font-medium text-cyber-white mb-3">
-                      {service.customPrice.label || 'Custom Amount'}
-                    </label>
-                    
-                    {service.customPrice.presets && service.customPrice.presets.length > 0 && (
-                      <div className="grid grid-cols-4 gap-3 mb-4">
-                        {service.customPrice.presets.map((preset) => (
-                          <button
-                            key={preset}
-                            onClick={() => handlePresetPriceSelect(preset)}
-                            className={`py-3 px-4 rounded-md font-semibold text-base transition-all ${
-                              selectedPrice === preset
-                                ? 'bg-green-neon/20 border-2 border-green-neon text-green-neon'
-                                : 'bg-purple-dark/30 border-2 border-transparent text-cyber-white hover:border-purple-neon/50'
-                            }`}
-                          >
-                            ${preset}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-green-neon text-lg">$</span>
-                      <input
-                        type="text"
-                        value={customPrice}
-                        onChange={handleCustomPriceChange}
-                        placeholder="Enter amount"
-                        className="w-full bg-purple-dark/30 border-2 border-purple-neon/30 rounded-md py-4 pl-8 pr-4 text-base text-cyber-white placeholder-cyber-white/40 focus:border-purple-neon focus:outline-none transition-colors"
-                      />
-                    </div>
-                  </div>
-                ) : null;
-              
-              case 'selectors':
-                return service.selectors && Object.keys(service.selectors).length > 0 ? (
-                  <div key={`${component.id}-${idx}`}>
-                    {Object.entries(service.selectors).map(([title, options], index) => (
-                      <CustomSelector
-                        key={`${service.id}-selector-${index}`}
-                        selectorId={`${service.id}-selector-${index}`}
-                        title={title}
-                        options={options}
-                        onValueChange={(value) => handleSelectorChange(`${service.id}-selector-${index}`, value)}
-                      />
-                    ))}
-                  </div>
-                ) : null;
-              
-              case 'additional':
-                return service.additionalServices && Object.keys(service.additionalServices).length > 0 ? (
-                  <div key={`${component.id}-${idx}`} className="mb-6">
-                    <CheckGroup 
-                      options={service.additionalServices}
-                      title={service.additionalServicesTitle}
-                      onSelectionChange={handleAdditionalServicesChange}
-                    />
-                  </div>
-                ) : null;
-              
-              default:
-                return null;
-            }
-          })}
-
-          {/* Terms Checkbox */}
-          <div className="mb-6">
-            <label className="flex items-start cursor-pointer">
-              <input
-                type="checkbox"
-                checked={acceptedTerms}
-                onChange={(e) => setAcceptedTerms(e.target.checked)}
-                className="mt-1 w-5 h-5 rounded border-2 border-purple-neon bg-purple-dark/30 text-pink-neon focus:ring-2 focus:ring-pink-neon focus:ring-offset-0 cursor-pointer"
+            {/* Service Components */}
+            {service.components?.map((component, idx) => (
+              <ServiceComponentRenderer
+                key={`${component.id}-${idx}`}
+                component={component}
+                service={service}
+                handlers={handlers}
+                selectedPrice={ps.selectedPrice}
+                customPrice={ps.customPrice}
+                showValidation={ps.showValidation}
+                isComponentSatisfied={ps.isComponentSatisfied}
+                formatPrice={formatPrice}
+                currencySymbol={symbol}
               />
-              <span className="ml-3 text-base text-cyber-white/80">
-                I accept the{' '}
-                <a 
-                  href="/policies" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-blue-neon hover:text-pink-neon underline"
-                >
-                  service policies
-                </a>
-              </span>
-            </label>
-          </div>
+            ))}
 
-          {/* Payment Methods */}
-          <div className="mb-6">
-            <label className="block text-base font-medium text-cyber-white mb-3">
-              Payment Method
-            </label>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setSelectedPaymentMethod('paypal')}
-                className={`flex-1 flex items-center justify-center gap-2 py-5 px-5 rounded-md font-semibold text-base transition-all ${
-                  selectedPaymentMethod === 'paypal'
-                    ? 'bg-blue-neon/20 border-2 border-blue-neon'
-                    : 'bg-purple-dark/30 border-2 border-transparent hover:border-purple-neon/50'
-                }`}
-              >
-                <svg className="w-6 h-6 text-blue-neon" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M20.067 8.478c.492.88.556 2.014.3 3.327-.74 3.806-3.276 5.12-6.514 5.12h-.5a.805.805 0 0 0-.794.68l-.04.22-.63 3.993-.032.17a.804.804 0 0 1-.794.679H7.72a.483.483 0 0 1-.477-.558L9.718 7.08a.972.972 0 0 1 .957-.817h4.992c1.006 0 1.746.09 2.262.261.088.03.17.059.246.09.024.01.047.024.066.038.503.222.863.572 1.056 1.106.136.378.205.804.226 1.284a4.49 4.49 0 0 1-.015.436h.002z"/>
-                </svg>
-                <span className="text-blue-neon">PayPal</span>
-              </button>
+            <PaymentCheckout
+              finalPrice={getFinalPrice()}
+              basePrice={getBasePrice()}
+              paymentDescription={getPaymentDescription()}
+              estimatedTime={getEstimatedTime()}
+              formatPrice={formatPrice}
+              discountCode={discount.code}
+              discountStatus={discount.status}
+              discountError={discount.error}
+              discountApplied={discount.applied}
+              discountAmount={getDiscountAmount()}
+              onDiscountCodeChange={discount.handleCodeChange}
+              onDiscountApply={discount.apply}
+              onDiscountRemove={discount.remove}
+              onDiscountKeyDown={discount.handleKeyDown}
+              acceptedTerms={ps.acceptedTerms}
+              onTermsChange={(v) => ps.setAcceptedTerms(v)}
+              selectedPaymentMethod={ps.selectedPaymentMethod}
+              onPaymentMethodChange={(m) => ps.setSelectedPaymentMethod(m)}
+              showPayPalButton={ps.showPayPalButton}
+              onPaymentClick={ps.handlePayment}
+              onPayPalSuccess={ps.handlePayPalSuccess}
+              onPayPalError={ps.handlePayPalError}
+              onPayPalCancel={ps.handlePayPalCancel}
+              paymentDisclaimer={paymentDisclaimer}
+            />
 
-              <button
-                onClick={() => setSelectedPaymentMethod('card')}
-                className={`flex-1 flex items-center justify-center gap-2 py-5 px-5 rounded-md font-semibold text-base transition-all ${
-                  selectedPaymentMethod === 'card'
-                    ? 'bg-green-neon/20 border-2 border-green-neon'
-                    : 'bg-purple-dark/30 border-2 border-transparent hover:border-purple-neon/50'
-                }`}
-              >
-                <svg className="w-6 h-6 text-green-neon" fill="currentColor" viewBox="0 0 48 32">
-                  <rect x="0" y="0" width="48" height="32" rx="4" opacity="0.3"/>
-                  <rect x="4" y="8" width="40" height="4"/>
-                </svg>
-                <span className="text-green-neon">Card</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Total and Pay Button */}
-          <div className="space-y-4">
-            {/* Warning Message */}
-            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-md p-3 flex items-start gap-2">
-              <svg className="w-5 h-5 text-yellow-500 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
-              <div className="flex-1">
-                <p className="text-yellow-500 font-semibold text-sm mb-1">Important Notice</p>
-                <p className="text-yellow-200/90 text-xs leading-relaxed">
-                  {paymentDisclaimer || 'After completing your payment, please create a ticket in our Discord server to start your order. Join BattleBoost Discord community for support!'}
-                </p>
+            {/* Mobile Accordion */}
+            <div className="lg:hidden mt-6">
+              <div className="glass-effect rounded-lg p-4 border border-purple-neon/20">
+                <Accordion content={accordionContent} />
               </div>
             </div>
-            
-            <div className="flex items-center justify-between p-5 glass-effect rounded-md border border-purple-neon/30">
-              <span className="text-cyber-white font-medium text-base">Total to pay:</span>
-              <span className="text-3xl font-bold text-cyber-white" style={{textShadow: '0 0 5px rgba(16,185,129,0.3), 0 0 10px rgba(16,185,129,0.2)'}}>${getFinalPrice().toFixed(2)}</span>
-            </div>
-
-            {/* Mostrar botón de PayPal si está seleccionado y activado */}
-            {selectedPaymentMethod === 'paypal' && showPayPalButton ? (
-              <div className="space-y-3">
-                <PayPalButton
-                  amount={getFinalPrice()}
-                  currency="USD"
-                  description={getPaymentDescription()}
-                  onSuccess={handlePayPalSuccess}
-                  onError={handlePayPalError}
-                  onCancel={handlePayPalCancel}
-                  disabled={!acceptedTerms}
-                />
-                <button
-                  onClick={() => setShowPayPalButton(false)}
-                  className="w-full py-3 rounded-md font-medium text-base bg-purple-dark/30 text-cyber-white hover:bg-purple-dark/50 transition-all"
-                >
-                  Cancel
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={handlePayment}
-                disabled={!acceptedTerms || !selectedPaymentMethod}
-                className={`w-full py-5 rounded-md font-bold text-lg transition-all ${
-                  acceptedTerms && selectedPaymentMethod
-                    ? 'bg-linear-to-r from-pink-neon to-purple-neon text-cyber-white hover:shadow-lg hover:shadow-pink-neon/50 hover:scale-105'
-                    : 'bg-purple-dark/30 text-cyber-white/40 cursor-not-allowed'
-                }`}
-              >
-                Pay Now
-              </button>
-            )}
           </div>
-
-          {/* Mobile Accordion - Below Pay Now button */}
-          <div className="lg:hidden mt-6">
-            <div className="glass-effect rounded-lg p-4 border border-purple-neon/20">
-              <Accordion content={accordionContent} />
-            </div>
-          </div>
-        </div>
         </aside>
       )}
-    </>
+    </>,
+    document.body,
   );
 }

@@ -7,14 +7,17 @@ interface BoxTitleOption {
 
 interface Props {
   options: BoxTitleOption[];
+  onSelectionChange?: (hasSelection: boolean) => void;
 }
 
-function BoxTitle({ options }: Props) {
+function BoxTitle({ options, onSelectionChange }: Props) {
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
 
-  const handleToggle = useCallback((index: number) => {
-    setSelectedOption(prev => prev === index ? null : index);
-  }, []);
+  const handleToggle = useCallback((index: number, currentSelected: number | null) => {
+    const newVal = currentSelected === index ? null : index;
+    setSelectedOption(newVal);
+    onSelectionChange?.(newVal !== null);
+  }, [onSelectionChange]);
 
   if (options.length === 0) return null;
 
@@ -29,7 +32,7 @@ function BoxTitle({ options }: Props) {
           return (
             <button
               key={`title-${index}`}
-              onClick={() => handleToggle(index)}
+              onClick={() => handleToggle(index, selectedOption)}
               className={`py-4 px-5 rounded-md font-semibold text-base transition-all text-center cursor-pointer ${
                 isLongLabel ? 'col-span-2' : ''
               } ${

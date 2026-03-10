@@ -5,7 +5,10 @@ interface Props {
   title: string;
   options: SelectOption[];
   onValueChange: (value: number) => void;
+  onSelectionChange?: (hasSelection: boolean) => void;
   selectorId: string;
+  formatPrice: (usd: number | string) => string;
+  discountPercent?: number;
 }
 
 // Genera una clave única para cada opción usando su índice y valor.
@@ -21,7 +24,7 @@ function parseOptionKey(key: string): number {
   return isNaN(num) ? 0 : num;
 }
 
-export default function CustomSelector({ title, options, onValueChange, selectorId }: Props) {
+export default function CustomSelector({ title, options, onValueChange, onSelectionChange, selectorId, formatPrice, discountPercent = 0 }: Props) {
   // Estado guardado como clave compuesta para evitar colisiones entre opciones con el mismo valor
   const [selectedKey, setSelectedKey] = useState<string>('');
 
@@ -36,8 +39,10 @@ export default function CustomSelector({ title, options, onValueChange, selector
     setSelectedKey(raw);
     if (raw === '') {
       onValueChange(0);
+      onSelectionChange?.(false);
     } else {
       onValueChange(parseOptionKey(raw));
+      onSelectionChange?.(true);
     }
   };
 
@@ -60,7 +65,7 @@ export default function CustomSelector({ title, options, onValueChange, selector
           <option value="">Choose...</option>
           {options.map((option, index) => (
             <option key={index} value={makeOptionKey(index, option.value)}>
-              {option.label} {option.value > 0 ? `+$${option.value}` : ''}
+              {option.label} {option.value > 0 ? `+${formatPrice(discountPercent ? Math.round(option.value * (1 - discountPercent / 100) * 100) / 100 : option.value)}` : ''}
             </option>
           ))}
         </select>

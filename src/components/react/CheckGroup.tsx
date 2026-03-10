@@ -5,9 +5,11 @@ interface Props {
   options: Record<string, AdditionalOption>;
   title?: string;
   onSelectionChange: (selectedValues: number[]) => void;
+  formatPrice: (usd: number | string) => string;
+  discountPercent?: number;
 }
 
-function CheckGroup({ options, title = 'Additional Services', onSelectionChange }: Props) {
+function CheckGroup({ options, title = 'Additional Services', onSelectionChange, formatPrice, discountPercent = 0 }: Props) {
   const [selectedOptions, setSelectedOptions] = useState<Set<string>>(new Set());
 
   // Reset selected options when options change (cuando cambia el servicio)
@@ -112,7 +114,14 @@ function CheckGroup({ options, title = 'Additional Services', onSelectionChange 
                   boxShadow: isSelected ? '0 0 8px rgba(16, 185, 129, 0.4)' : 'none'
                 }}
               >
-                +${option.value}
+                {discountPercent ? (
+                  <span className="flex flex-col items-end leading-tight">
+                    <span className="line-through opacity-40 text-xs">+{formatPrice(option.value)}</span>
+                    <span>+{formatPrice(Math.round(option.value * (1 - discountPercent / 100) * 100) / 100)}</span>
+                  </span>
+                ) : (
+                  <>+{formatPrice(option.value)}</>
+                )}
               </div>
             </button>
           );

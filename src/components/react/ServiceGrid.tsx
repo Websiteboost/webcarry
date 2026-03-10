@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { Service, AccordionContent } from '../../types';
 import PaymentSidebar from './PaymentSidebar';
+import { useCurrency } from '../../hooks/useCurrency';
 
 interface CategoryWithServices {
   id: string;
@@ -21,16 +22,39 @@ interface Props {
   accordionContent: AccordionContent;
   categories?: CategoryInfo[];
   paymentDisclaimer?: string;
+  euroValue?: number;
   onServiceSelect?: (service: Service) => void;
 }
 
-export default function ServiceGrid({ initialServices, accordionContent, categories, paymentDisclaimer, onServiceSelect }: Props) {
+export default function ServiceGrid({ initialServices, accordionContent, categories, paymentDisclaimer, euroValue = 1.08, onServiceSelect }: Props) {
+  const { formatPrice, currency } = useCurrency(euroValue);
   const [services, setServices] = useState<Service[]>([]);
   const [categorizedServices, setCategorizedServices] = useState<CategoryWithServices[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const openServiceFromUrl = () => {
+      const params = new URLSearchParams(window.location.search);
+      const serviceId = params.get('service');
+      if (serviceId) {
+        const service = initialServices.find(s => s.id === serviceId);
+        if (service) {
+          setSelectedService(service);
+          setIsPaymentOpen(true);
+          return;
+        }
+      }
+      setIsPaymentOpen(false);
+    };
+
+    openServiceFromUrl();
+
+    window.addEventListener('popstate', openServiceFromUrl);
+    return () => window.removeEventListener('popstate', openServiceFromUrl);
+  }, [initialServices]);
 
   useEffect(() => {
     // Simular carga asíncrona y agrupar por categoría
@@ -74,6 +98,9 @@ export default function ServiceGrid({ initialServices, accordionContent, categor
   const handleServiceSelect = (service: Service) => {
     setSelectedService(service);
     setIsPaymentOpen(true);
+    const url = new URL(window.location.href);
+    url.searchParams.set('service', service.id);
+    history.pushState({ serviceId: service.id }, '', url.toString());
     if (onServiceSelect) {
       onServiceSelect(service);
     }
@@ -81,6 +108,9 @@ export default function ServiceGrid({ initialServices, accordionContent, categor
 
   const handleClosePayment = () => {
     setIsPaymentOpen(false);
+    const url = new URL(window.location.href);
+    url.searchParams.delete('service');
+    history.pushState({}, '', url.toString());
   };
 
   if (loading) {
@@ -174,9 +204,14 @@ export default function ServiceGrid({ initialServices, accordionContent, categor
 
                   {/* Price and CTA */}
                   <div className="flex items-center justify-between mt-auto pt-4 border-t border-purple-neon/20">
-                    <div className="flex items-center gap-2">
-                      <span className="text-3xl font-bold text-cyber-white" style={{textShadow: '0 0 5px rgba(16,185,129,0.3), 0 0 10px rgba(16,185,129,0.2)'}}>${service.price}</span>
-                      <span className="text-sm text-cyber-white/60">USD</span>
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className="text-3xl font-bold text-cyber-white"
+                        style={{textShadow: '0 0 5px rgba(16,185,129,0.3), 0 0 10px rgba(16,185,129,0.2)'}}
+                      >
+                        {formatPrice(service.price)}
+                      </span>
+                      <span className="text-sm text-cyber-white/50">{currency}</span>
                     </div>
                     <button
                       onClick={() => handleServiceSelect(service)}
@@ -199,6 +234,7 @@ export default function ServiceGrid({ initialServices, accordionContent, categor
         onClose={handleClosePayment}
         accordionContent={accordionContent}
         paymentDisclaimer={paymentDisclaimer}
+        euroValue={euroValue}
       />
     </div>
   );

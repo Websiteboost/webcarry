@@ -4,9 +4,11 @@ import type { BoxPriceItem } from '../../types';
 interface Props {
   values: BoxPriceItem[];
   onSelectionChange: (selectedValues: number[]) => void;
+  formatPrice: (usd: number | string) => string;
+  discountPercent?: number;
 }
 
-function BoxPrice({ values, onSelectionChange }: Props) {
+function BoxPrice({ values, onSelectionChange, formatPrice, discountPercent = 0 }: Props) {
   const [selectedIndexes, setSelectedIndexes] = useState<Set<number>>(new Set());
 
   // Reset selected indexes when values change (cuando cambia el servicio)
@@ -37,6 +39,13 @@ function BoxPrice({ values, onSelectionChange }: Props) {
   }, []);
 
   if (values.length === 0) return null;
+
+  const rawTotal = Math.round(
+    Array.from(selectedIndexes).map(idx => values[idx].value).reduce((sum, val) => sum + val, 0) * 100
+  ) / 100;
+  const discountedTotal = discountPercent
+    ? Math.round(rawTotal * (1 - discountPercent / 100) * 100) / 100
+    : null;
 
   return (
     <div className="space-y-3">
@@ -90,10 +99,10 @@ function BoxPrice({ values, onSelectionChange }: Props) {
                 {item.label ? (
                   <div className="flex flex-col items-center">
                     <span className="text-base font-semibold text-center">{item.label}</span>
-                    <span className="text-sm opacity-80">${item.value}</span>
+                    <span className="text-sm opacity-80">{formatPrice(item.value)}</span>
                   </div>
                 ) : (
-                  <span className="text-xl font-bold">${item.value}</span>
+                  <span className="text-xl font-bold">{formatPrice(item.value)}</span>
                 )}
               </div>
             </button>
@@ -115,7 +124,14 @@ function BoxPrice({ values, onSelectionChange }: Props) {
               </span>
             </div>
             <span className="text-base font-bold text-green-neon">
-              +${Math.round(Array.from(selectedIndexes).map(idx => values[idx].value).reduce((sum, val) => sum + val, 0) * 100) / 100}
+              {discountedTotal !== null ? (
+                <>
+                  <span className="line-through opacity-40 text-sm mr-1">+{formatPrice(rawTotal)}</span>
+                  +{formatPrice(discountedTotal)}
+                </>
+              ) : (
+                <>+{formatPrice(rawTotal)}</>
+              )}
             </span>
           </div>
         </div>

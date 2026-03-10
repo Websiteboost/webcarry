@@ -38,7 +38,7 @@ const paymentConfig = await getPaymentConfig();
   <!-- Logo: top-right inicial en mobile, bottom-left con scroll; top-left fixed en desktop -->
   <div id="game-logo" class="fixed top-6 right-3 z-50 p-2 sm:top-0 sm:left-0 sm:right-auto sm:p-6">
     <div class="transition-all duration-700 ease-in-out opacity-100">
-      <GlitchLogo logoText={home.logoText} />
+      <GlitchLogo logoText={home.logoText} logoImage={home.logoImage} />
     </div>
   </div>
 
@@ -46,7 +46,7 @@ const paymentConfig = await getPaymentConfig();
     <!-- Background BB Watermark -->
     <BackgroundLogo />
 
-    <div class="w-full max-w-full relative z-10">
+    <div class="w-full max-w-full">
       <!-- GamePageView gestiona: MobileMenu, Sidebar, Breadcrumb, CategoryCards y ServiceGrid -->
       <GamePageView
         client:load
@@ -56,6 +56,7 @@ const paymentConfig = await getPaymentConfig();
         initialServices={gameServices}
         accordionContent={accordion}
         paymentDisclaimer={paymentConfig.disclaimer}
+        euroValue={paymentConfig.euroValue}
       />
     </div>
   </main>

@@ -16,8 +16,13 @@ interface ServiceRow {
 
 interface ServicePriceRow {
   id: string;
-  type: 'bar' | 'box' | 'custom' | 'selectors' | 'additional' | 'boxtitle' | 'labeltitle';
+  type: 'bar' | 'box' | 'custom' | 'selectors' | 'additional' | 'boxtitle' | 'labeltitle' | 'group';
   config: any;
+  display_order: number;
+  required: boolean;
+  estimated_time: number;
+  discount_percent: number;
+  group_id: string | null;
   created_at: Date;
 }
 
@@ -99,12 +104,12 @@ export async function getServicesByGame(gameId: string): Promise<Service[]> {
  * Construye un objeto Service completo desde un row de base de datos
  */
 async function buildServiceFromRow(row: ServiceRow): Promise<Service> {
-  // Obtener configuraciones de precios con order
+  // Obtener configuraciones de precios con order y group_id
   const priceRows = await sql`
-    SELECT id, type, config, created_at
+    SELECT id, type, config, display_order, required, estimated_time, discount_percent, group_id, created_at
     FROM service_prices
     WHERE service_id = ${row.id}
-    ORDER BY created_at ASC
+    ORDER BY display_order ASC, created_at ASC
   ` as ServicePriceRow[];
   
   // Obtener juegos asociados
@@ -128,15 +133,25 @@ async function buildServiceFromRow(row: ServiceRow): Promise<Service> {
     components: [],
   };
   
-  // Procesar configuraciones de precios y crear components array ordenado
-  priceRows.forEach((priceRow, index) => {
-    const component: any = {
+  // Pasada 1: crear todos los componentes y poblar datos a nivel de servicio
+  const componentMap = new Map<string, import('../../types').ServiceComponent>();
+
+  priceRows.forEach((priceRow) => {
+    const component: import('../../types').ServiceComponent = {
       id: priceRow.id,
       type: priceRow.type,
-      order: index,
+      order: priceRow.display_order,
+      required: priceRow.required,
+      estimatedTime: priceRow.estimated_time ?? 0,
+      discount_percent: priceRow.discount_percent ?? 0,
+      groupId: priceRow.group_id,
     };
-    
+
     switch (priceRow.type) {
+      case 'group':
+        component.data = priceRow.config;
+        component.children = [];
+        break;
       case 'bar':
         service.barPrice = priceRow.config as BarPriceConfig;
         component.data = priceRow.config;
@@ -146,23 +161,20 @@ async function buildServiceFromRow(row: ServiceRow): Promise<Service> {
         component.data = priceRow.config;
         break;
       case 'custom':
-        service.customPrice = {
-          enabled: true,
-          ...priceRow.config,
-        } as CustomPriceConfig;
+        service.customPrice = { enabled: true, ...priceRow.config } as CustomPriceConfig;
         component.data = priceRow.config;
         break;
       case 'selectors':
         service.selectors = priceRow.config as SelectorConfig;
         component.data = priceRow.config;
         break;
-      case 'additional':
-        // Extraer título si existe en el config
+      case 'additional': {
         const { title, ...additionalOptions } = priceRow.config;
         service.additionalServices = additionalOptions;
         service.additionalServicesTitle = title || 'Additional Services';
         component.data = { title, options: additionalOptions };
         break;
+      }
       case 'boxtitle':
         if (!service.boxTitles) service.boxTitles = [];
         if (priceRow.config.options && Array.isArray(priceRow.config.options)) {
@@ -175,14 +187,27 @@ async function buildServiceFromRow(row: ServiceRow): Promise<Service> {
         service.serviceTitles.push({
           id: priceRow.id,
           title: priceRow.config.title || '',
-          order: service.serviceTitles.length
+          order: service.serviceTitles.length,
         });
         component.data = priceRow.config;
         break;
     }
-    
-    service.components?.push(component);
+
+    componentMap.set(priceRow.id, component);
   });
-  
+
+  // Pasada 2: vincular hijos a sus grupos y recopilar componentes raíz
+  priceRows.forEach((priceRow) => {
+    const component = componentMap.get(priceRow.id)!;
+    if (priceRow.group_id) {
+      const parent = componentMap.get(priceRow.group_id);
+      if (parent?.children) {
+        parent.children.push(component);
+      }
+    } else {
+      service.components!.push(component);
+    }
+  });
+
   return service;
 }

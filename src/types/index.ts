@@ -81,11 +81,32 @@ export interface ServiceTitle {
   order: number;
 }
 
+export interface GroupConfig {
+  title: string;
+  collapseByDefault: boolean;
+}
+
+export interface DiscountCode {
+  code: string;
+  discount_type: 'percent' | 'fixed';
+  discount_value: number;
+  expires_at: string | null;
+}
+
 export interface ServiceComponent {
   id: string;
-  type: 'bar' | 'box' | 'custom' | 'selectors' | 'additional' | 'boxtitle' | 'labeltitle';
+  type: 'bar' | 'box' | 'custom' | 'selectors' | 'additional' | 'boxtitle' | 'labeltitle' | 'group';
   order: number;
+  required?: boolean;
+  /** Estimated time in hours (0 = not applicable) */
+  estimatedTime?: number;
+  /** Discount percentage applied to this component's price contribution (0-100) */
+  discount_percent?: number;
   data?: any;
+  /** ID of the parent group component, null/undefined for root components */
+  groupId?: string | null;
+  /** Populated only when type === 'group' */
+  children?: ServiceComponent[];
 }
 
 export interface Service {

@@ -4,6 +4,7 @@ import type { Service, AccordionContent } from '../../types';
 import CategorySidebar from './CategorySidebar';
 import ServiceGrid from './ServiceGrid';
 import MobileMenu from './MobileMenu';
+import ServiceSearch from './ServiceSearch';
 
 interface CategoryInfo {
   id: string;
@@ -20,6 +21,7 @@ interface Props {
   initialServices: Service[];
   accordionContent: AccordionContent;
   paymentDisclaimer?: string;
+  euroValue?: number;
 }
 
 const getIcon = (iconName: string) => {
@@ -34,6 +36,7 @@ export default function GamePageView({
   initialServices,
   accordionContent,
   paymentDisclaimer,
+  euroValue = 1.08,
 }: Props) {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
 
@@ -42,8 +45,24 @@ export default function GamePageView({
     const readFromUrl = () => {
       const params = new URLSearchParams(window.location.search);
       const cat = params.get('category');
+      const serviceId = params.get('service');
+
       if (cat && categories.find(c => c.id === cat)) {
         setSelectedCategoryId(cat);
+      } else if (serviceId) {
+        // Deep-link: auto-select the category that owns this service
+        const service = initialServices.find(s => s.id === serviceId);
+        if (service && categories.find(c => c.id === service.categoryId)) {
+          setSelectedCategoryId(service.categoryId);
+          // Patch URL to also include the category so the state is consistent
+          const url = new URL(window.location.href);
+          if (!url.searchParams.get('category')) {
+            url.searchParams.set('category', service.categoryId);
+            history.replaceState({ categoryId: service.categoryId, serviceId }, '', url.toString());
+          }
+        } else {
+          setSelectedCategoryId(null);
+        }
       } else {
         setSelectedCategoryId(null);
       }
@@ -89,6 +108,11 @@ export default function GamePageView({
         onCategoryChange={handleCategorySelect}
       />
 
+      {/* Mobile search icon — sits to the right of the hamburger in fixed top bar */}
+      <div className="lg:hidden fixed top-4 left-17.5 z-50">
+        <ServiceSearch services={initialServices} categories={categories} />
+      </div>
+
       <div className="flex flex-col lg:flex-row">
         {/* Sidebar (Desktop) */}
         <div className="hidden lg:block lg:w-96 shrink-0">
@@ -104,29 +128,34 @@ export default function GamePageView({
         {/* Content Area */}
         <div className="flex-1 px-6 lg:px-10 py-8 lg:py-12">
 
-          {/* Breadcrumb dinámico */}
-          <nav className="flex items-center space-x-2 text-sm mb-8">
-            <span className="text-blue-neon/50 cursor-default">{gameTitle}</span>
-            {selectedCategory && (
-              <>
-                <span className="text-cyber-white/30">/</span>
-                <button
-                  onClick={handleBackToCategories}
-                  className="text-blue-neon hover:text-pink-neon transition-colors"
-                >
-                  Categories
-                </button>
-                <span className="text-cyber-white/30">/</span>
-                <span className="text-pink-neon font-semibold">{selectedCategory.name}</span>
-              </>
-            )}
-            {!selectedCategory && (
-              <>
-                <span className="text-cyber-white/30">/</span>
-                <span className="text-pink-neon font-semibold">Categories</span>
-              </>
-            )}
-          </nav>
+          {/* Breadcrumb + desktop search row */}
+          <div className="flex items-center justify-between gap-4 mb-8">
+            <nav className="flex items-center space-x-2 text-sm">
+              <span className="text-blue-neon/50 cursor-default">{gameTitle}</span>
+              {selectedCategory && (
+                <>
+                  <span className="text-cyber-white/30">/</span>
+                  <button
+                    onClick={handleBackToCategories}
+                    className="text-blue-neon hover:text-pink-neon transition-colors"
+                  >
+                    Categories
+                  </button>
+                  <span className="text-cyber-white/30">/</span>
+                  <span className="text-pink-neon font-semibold">{selectedCategory.name}</span>
+                </>
+              )}
+              {!selectedCategory && (
+                <>
+                  <span className="text-cyber-white/30">/</span>
+                  <span className="text-pink-neon font-semibold">Categories</span>
+                </>
+              )}
+            </nav>
+            <div className="hidden lg:block w-72 xl:w-96 shrink-0">
+              <ServiceSearch services={initialServices} categories={categories} />
+            </div>
+          </div>
 
           {/* Page Header */}
           <div className="mb-12">
@@ -214,6 +243,7 @@ export default function GamePageView({
               accordionContent={accordionContent}
               categories={filteredCategories as any}
               paymentDisclaimer={paymentDisclaimer}
+              euroValue={euroValue}
             />
           )}
         </div>
