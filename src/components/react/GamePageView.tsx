@@ -5,6 +5,7 @@ import CategorySidebar from './CategorySidebar';
 import ServiceGrid from './ServiceGrid';
 import MobileMenu from './MobileMenu';
 import ServiceSearch from './ServiceSearch';
+import CurrencySelector from './CurrencySelector';
 
 interface CategoryInfo {
   id: string;
@@ -107,6 +108,11 @@ export default function GamePageView({
         currentCategoryId={selectedCategoryId ?? undefined}
         onCategoryChange={handleCategorySelect}
       />
+
+      {/* Currency selector — desktop only, fixed top-right */}
+      <div className="hidden lg:block fixed top-4 right-4 z-50">
+        <CurrencySelector euroValue={euroValue} />
+      </div>
 
       {/* Mobile search icon — sits to the right of the hamburger in fixed top bar */}
       <div className="lg:hidden fixed top-4 left-17.5 z-50">
