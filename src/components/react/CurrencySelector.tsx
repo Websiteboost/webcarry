@@ -3,6 +3,7 @@ import { useCurrency, type Currency } from '../../hooks/useCurrency';
 interface Props {
   /** USD value of 1 EUR, delivered from the DB via SSR props. */
   euroValue: number;
+  label?: string;
 }
 
 const OPTIONS: { value: Currency; symbol: string; label: string }[] = [
@@ -10,13 +11,13 @@ const OPTIONS: { value: Currency; symbol: string; label: string }[] = [
   { value: 'EUR', symbol: '€', label: 'EUR' },
 ];
 
-export default function CurrencySelector({ euroValue }: Props) {
+export default function CurrencySelector({ euroValue, label }: Props) {
   const { currency, changeCurrency } = useCurrency(euroValue);
 
   return (
     <div className="flex items-center gap-2.5" role="group" aria-label="Currency selector">
       <span className="text-cyber-white/35 text-[10px] font-semibold uppercase tracking-widest select-none">
-        Currency
+        {label ?? 'Currency'}
       </span>
 
       <div

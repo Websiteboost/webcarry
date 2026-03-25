@@ -2,6 +2,7 @@ import PayPalButton from '../PayPalButton';
 import DiscountInput from './DiscountInput';
 import type { DiscountCode } from '../../../types';
 import type { DiscountStatus } from './useDiscount';
+import type { UiTexts } from '../../../lib/services/ui-texts';
 
 function formatTime(hours: number): string {
   if (hours < 24) return `~${hours}h`;
@@ -37,6 +38,7 @@ interface Props {
   onPayPalError: (error: any) => void;
   onPayPalCancel: () => void;
   paymentDisclaimer?: string;
+  uiTexts?: UiTexts;
 }
 
 export default function PaymentCheckout({
@@ -64,6 +66,7 @@ export default function PaymentCheckout({
   onPayPalError,
   onPayPalCancel,
   paymentDisclaimer,
+  uiTexts,
 }: Props) {
   return (
     <>
@@ -77,15 +80,7 @@ export default function PaymentCheckout({
             className="mt-1 w-5 h-5 rounded border-2 border-purple-neon bg-purple-dark/30 text-pink-neon focus:ring-2 focus:ring-pink-neon focus:ring-offset-0 cursor-pointer"
           />
           <span className="ml-3 text-base text-cyber-white/80">
-            I accept the{' '}
-            <a
-              href="/policies"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-neon hover:text-pink-neon underline"
-            >
-              service policies
-            </a>
+            {uiTexts?.acceptTerms ?? 'I accept the service policies'}
           </span>
         </label>
       </div>
@@ -93,7 +88,7 @@ export default function PaymentCheckout({
       {/* Payment Methods */}
       <div className="mb-6">
         <label className="block text-base font-medium text-cyber-white mb-3">
-          Payment Method
+          {uiTexts?.paymentMethodLabel ?? 'Payment Method'}
         </label>
         <div className="flex gap-3">
           <button
@@ -107,7 +102,7 @@ export default function PaymentCheckout({
             <svg className="w-6 h-6 text-blue-neon" fill="currentColor" viewBox="0 0 24 24">
               <path d="M20.067 8.478c.492.88.556 2.014.3 3.327-.74 3.806-3.276 5.12-6.514 5.12h-.5a.805.805 0 0 0-.794.68l-.04.22-.63 3.993-.032.17a.804.804 0 0 1-.794.679H7.72a.483.483 0 0 1-.477-.558L9.718 7.08a.972.972 0 0 1 .957-.817h4.992c1.006 0 1.746.09 2.262.261.088.03.17.059.246.09.024.01.047.024.066.038.503.222.863.572 1.056 1.106.136.378.205.804.226 1.284a4.49 4.49 0 0 1-.015.436h.002z" />
             </svg>
-            <span className="text-blue-neon">PayPal</span>
+            <span className="text-blue-neon">{uiTexts?.paypalLabel ?? 'PayPal'}</span>
           </button>
 
           <button
@@ -122,7 +117,7 @@ export default function PaymentCheckout({
               <rect x="0" y="0" width="48" height="32" rx="4" opacity="0.3" />
               <rect x="4" y="8" width="40" height="4" />
             </svg>
-            <span className="text-green-neon">Card</span>
+            <span className="text-green-neon">{uiTexts?.cardLabel ?? 'Card'}</span>
           </button>
         </div>
       </div>
@@ -135,7 +130,7 @@ export default function PaymentCheckout({
             <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
           </svg>
           <div className="flex-1">
-            <p className="text-yellow-500 font-semibold text-sm mb-1">Important Notice</p>
+            <p className="text-yellow-500 font-semibold text-sm mb-1">{uiTexts?.importantNotice ?? 'Important Notice'}</p>
             <p className="text-yellow-200/90 text-xs leading-relaxed">
               {paymentDisclaimer || 'After completing your payment, please create a ticket in our Discord server to start your order. Join BattleBoost Discord community for support!'}
             </p>
@@ -154,6 +149,10 @@ export default function PaymentCheckout({
           onApply={onDiscountApply}
           onRemove={onDiscountRemove}
           onKeyDown={onDiscountKeyDown}
+          codeLabel={uiTexts?.discountCodeLabel}
+          placeholder={uiTexts?.discountPlaceholder}
+          applyLabel={uiTexts?.discountApply}
+          offLabel={uiTexts?.discountOff}
         />
 
         {/* Total + Estimated Time */}
@@ -162,12 +161,12 @@ export default function PaymentCheckout({
             <div className="flex items-center justify-between px-5 pt-4 pb-1">
               <span className="text-sm text-cyber-white/40 line-through">{formatPrice(basePrice)}</span>
               <span className="text-xs font-semibold text-green-neon bg-green-neon/10 px-2 py-0.5 rounded-full">
-                −{formatPrice(discountAmount)} saved
+                −{formatPrice(discountAmount)} {uiTexts?.saved ?? 'saved'}
               </span>
             </div>
           )}
           <div className="flex items-center justify-between px-5 pt-5 pb-4">
-            <span className="text-cyber-white font-medium text-base">Total to pay:</span>
+            <span className="text-cyber-white font-medium text-base">{uiTexts?.totalToPay ?? 'Total to pay:'}</span>
             <span
               className={`text-3xl font-bold ${ discountAmount > 0 ? 'text-green-neon' : 'text-cyber-white'}`}
               style={{ textShadow: discountAmount > 0 ? '0 0 8px rgba(16,185,129,0.5), 0 0 16px rgba(16,185,129,0.3)' : '0 0 5px rgba(16,185,129,0.3), 0 0 10px rgba(16,185,129,0.2)' }}
@@ -181,7 +180,7 @@ export default function PaymentCheckout({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <span className="text-xs text-cyber-white/60">
-                Estimated delivery:{' '}
+                {uiTexts?.estimatedDelivery ?? 'Estimated delivery:'}{' '}
                 <span className="text-blue-neon font-semibold">{formatTime(estimatedTime)}</span>
               </span>
             </div>
@@ -204,7 +203,7 @@ export default function PaymentCheckout({
               onClick={onPayPalCancel}
               className="w-full py-3 rounded-md font-medium text-base bg-purple-dark/30 text-cyber-white hover:bg-purple-dark/50 transition-all"
             >
-              Cancel
+              {uiTexts?.cancel ?? 'Cancel'}
             </button>
           </div>
         ) : (
@@ -217,7 +216,7 @@ export default function PaymentCheckout({
                 : 'bg-purple-dark/30 text-cyber-white/40 cursor-not-allowed'
             }`}
           >
-            Pay Now
+            {uiTexts?.payNow ?? 'Pay Now'}
           </button>
         )}
       </div>

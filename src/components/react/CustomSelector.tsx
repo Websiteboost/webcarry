@@ -9,6 +9,7 @@ interface Props {
   selectorId: string;
   formatPrice: (usd: number | string) => string;
   discountPercent?: number;
+  choosePlaceholder?: string;
 }
 
 // Genera una clave única para cada opción usando su índice y valor.
@@ -24,7 +25,7 @@ function parseOptionKey(key: string): number {
   return isNaN(num) ? 0 : num;
 }
 
-export default function CustomSelector({ title, options, onValueChange, onSelectionChange, selectorId, formatPrice, discountPercent = 0 }: Props) {
+export default function CustomSelector({ title, options, onValueChange, onSelectionChange, selectorId, formatPrice, discountPercent = 0, choosePlaceholder }: Props) {
   // Estado guardado como clave compuesta para evitar colisiones entre opciones con el mismo valor
   const [selectedKey, setSelectedKey] = useState<string>('');
 
@@ -62,7 +63,7 @@ export default function CustomSelector({ title, options, onValueChange, onSelect
           }}
           className="w-full bg-purple-dark/30 border-2 border-purple-neon/30 rounded-md py-4 px-4 pr-10 text-base text-cyber-white focus:border-purple-neon focus:outline-none transition-colors appearance-none cursor-pointer [&>option]:bg-[#1a0b2e] [&>option]:text-[#e0e7ff] [&>option]:py-3 [&>option]:px-4 [&>option:checked]:bg-purple-neon/20 [&>option:checked]:text-purple-neon"
         >
-          <option value="">Choose...</option>
+          <option value="">{choosePlaceholder ?? 'Choose...'}</option>
           {options.map((option, index) => (
             <option key={index} value={makeOptionKey(index, option.value)}>
               {option.label} {option.value > 0 ? `+${formatPrice(discountPercent ? Math.round(option.value * (1 - discountPercent / 100) * 100) / 100 : option.value)}` : ''}

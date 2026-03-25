@@ -2,6 +2,7 @@
  * Servicio para consultar configuración de pagos desde la base de datos
  */
 import { sql } from '../db';
+import { t, type Locale } from '../i18n';
 
 export interface PaymentConfig {
   disclaimer: string;
@@ -12,9 +13,9 @@ export interface PaymentConfig {
 /**
  * Obtiene la configuración de pagos
  */
-export async function getPaymentConfig(): Promise<PaymentConfig> {
+export async function getPaymentConfig(locale: Locale = 'en'): Promise<PaymentConfig> {
   const configRows = await sql`
-    SELECT payment_disclaimer, euro_value
+    SELECT payment_disclaimer, payment_disclaimer_es, euro_value
     FROM site_config
     WHERE id = 1
     LIMIT 1
@@ -27,7 +28,11 @@ export async function getPaymentConfig(): Promise<PaymentConfig> {
   const config = configRows[0];
   
   return {
-    disclaimer: config.payment_disclaimer || 'After completing your payment, please create a ticket in our Discord server to start your order.',
+    disclaimer: t(
+      config.payment_disclaimer || 'After completing your payment, please create a ticket in our Discord server to start your order.',
+      config.payment_disclaimer_es,
+      locale,
+    ),
     euroValue: Number(config.euro_value ?? 1.08),
   };
 }

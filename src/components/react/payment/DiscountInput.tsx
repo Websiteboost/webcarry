@@ -12,23 +12,29 @@ interface Props {
   onApply: () => void;
   onRemove: () => void;
   onKeyDown: (e: React.KeyboardEvent) => void;
+  codeLabel?: string;
+  placeholder?: string;
+  applyLabel?: string;
+  offLabel?: string;
 }
 
 export default function DiscountInput({
   code, status, error, applied, discountAmount, formatPrice,
   onCodeChange, onApply, onRemove, onKeyDown,
+  codeLabel, placeholder, applyLabel, offLabel,
 }: Props) {
   const isLoading = status === 'loading';
+  const off = offLabel ?? 'off';
 
   // Applied state — show chip with code + savings
   if (status === 'valid' && applied) {
     const label = applied.discount_type === 'percent'
-      ? `${applied.discount_value}% off`
-      : `${formatPrice(Number(applied.discount_value))} off`;
+      ? `${applied.discount_value}% ${off}`
+      : `${formatPrice(Number(applied.discount_value))} ${off}`;
 
     return (
       <div className="mb-4">
-        <p className="text-xs font-medium text-cyber-white/60 mb-2 uppercase tracking-wide">Discount Code</p>
+        <p className="text-xs font-medium text-cyber-white/60 mb-2 uppercase tracking-wide">{codeLabel ?? 'Discount Code'}</p>
         <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-md border border-green-neon/40 bg-green-neon/5">
           <div className="flex items-center gap-2 min-w-0">
             <svg className="w-4 h-4 text-green-neon shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -64,14 +70,14 @@ export default function DiscountInput({
   // Input state — idle / loading / invalid
   return (
     <div className="mb-4">
-      <p className="text-xs font-medium text-cyber-white/60 mb-2 uppercase tracking-wide">Discount Code</p>
+      <p className="text-xs font-medium text-cyber-white/60 mb-2 uppercase tracking-wide">{codeLabel ?? 'Discount Code'}</p>
       <div className="flex gap-2">
         <input
           type="text"
           value={code}
           onChange={(e) => onCodeChange(e.target.value)}
           onKeyDown={onKeyDown}
-          placeholder="Enter code"
+          placeholder={placeholder ?? 'Enter code'}
           maxLength={50}
           disabled={isLoading}
           spellCheck={false}
@@ -93,7 +99,7 @@ export default function DiscountInput({
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
-          ) : 'Apply'}
+          ) : (applyLabel ?? 'Apply')}
         </button>
       </div>
 

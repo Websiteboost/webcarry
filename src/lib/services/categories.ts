@@ -3,6 +3,7 @@
  */
 import { sql } from '../db';
 import type { Category } from '../../types';
+import { t, type Locale } from '../i18n';
 
 interface CategoryWithServices extends Omit<Category, 'services'> {
   services: Array<{
@@ -16,17 +17,17 @@ interface CategoryWithServices extends Omit<Category, 'services'> {
 /**
  * Obtiene todas las categorías
  */
-export async function getAllCategories(): Promise<Category[]> {
+export async function getAllCategories(locale: Locale = 'en'): Promise<Category[]> {
   const rows = await sql`
-    SELECT id, name, description, icon, created_at
+    SELECT id, name, name_es, description, description_es, icon
     FROM categories
     ORDER BY display_order ASC
   `;
   
   return rows.map(row => ({
     id: row.id,
-    name: row.name,
-    description: row.description,
+    name: t(row.name, row.name_es, locale),
+    description: t(row.description, row.description_es, locale),
     icon: row.icon,
   }));
 }
@@ -34,9 +35,9 @@ export async function getAllCategories(): Promise<Category[]> {
 /**
  * Obtiene una categoría por su ID
  */
-export async function getCategoryById(categoryId: string): Promise<Category | null> {
+export async function getCategoryById(categoryId: string, locale: Locale = 'en'): Promise<Category | null> {
   const rows = await sql`
-    SELECT id, name, description, icon, created_at
+    SELECT id, name, name_es, description, description_es, icon
     FROM categories
     WHERE id = ${categoryId}
     LIMIT 1
@@ -47,8 +48,8 @@ export async function getCategoryById(categoryId: string): Promise<Category | nu
   const row = rows[0];
   return {
     id: row.id,
-    name: row.name,
-    description: row.description,
+    name: t(row.name, row.name_es, locale),
+    description: t(row.description, row.description_es, locale),
     icon: row.icon,
   };
 }
@@ -56,14 +57,14 @@ export async function getCategoryById(categoryId: string): Promise<Category | nu
 /**
  * Obtiene categorías con sus servicios asociados
  */
-export async function getCategoriesWithServices(): Promise<CategoryWithServices[]> {
-  const categories = await getAllCategories();
+export async function getCategoriesWithServices(locale: Locale = 'en'): Promise<CategoryWithServices[]> {
+  const categories = await getAllCategories(locale);
   
   // Para cada categoría, obtener sus servicios
   const categoriesWithServices = await Promise.all(
     categories.map(async (category) => {
       const services = await sql`
-        SELECT id, title, price, image
+        SELECT id, title, title_es, price, image
         FROM services
         WHERE category_id = ${category.id}
         ORDER BY display_order ASC
@@ -73,7 +74,7 @@ export async function getCategoriesWithServices(): Promise<CategoryWithServices[
         ...category,
         services: services.map(s => ({
           id: s.id as string,
-          title: s.title as string,
+          title: t(s.title as string, s.title_es as string, locale),
           price: s.price as number,
           image: s.image as string,
         })),
@@ -88,10 +89,10 @@ export async function getCategoriesWithServices(): Promise<CategoryWithServices[
  * Obtiene categorías con servicios filtradas por juego
  * Solo devuelve categorías que tienen servicios disponibles para el juego especificado
  */
-export async function getCategoriesWithServicesByGame(gameId: string): Promise<CategoryWithServices[]> {
+export async function getCategoriesWithServicesByGame(gameId: string, locale: Locale = 'en'): Promise<CategoryWithServices[]> {
   // Obtener todas las categorías que tienen relación con el juego
   const categoryRows = await sql`
-    SELECT DISTINCT c.id, c.name, c.description, c.icon, c.created_at, c.display_order
+    SELECT DISTINCT c.id, c.name, c.name_es, c.description, c.description_es, c.icon, c.created_at, c.display_order
     FROM categories c
     INNER JOIN category_games cg ON c.id = cg.category_id
     WHERE cg.game_id = ${gameId}
@@ -102,7 +103,7 @@ export async function getCategoriesWithServicesByGame(gameId: string): Promise<C
   const categoriesWithServices = await Promise.all(
     categoryRows.map(async (category) => {
       const services = await sql`
-        SELECT DISTINCT s.id, s.title, s.price, s.image, s.created_at, s.display_order
+        SELECT DISTINCT s.id, s.title, s.title_es, s.price, s.image, s.created_at, s.display_order
         FROM services s
         INNER JOIN service_games sg ON s.id = sg.service_id
         WHERE s.category_id = ${category.id}
@@ -112,12 +113,12 @@ export async function getCategoriesWithServicesByGame(gameId: string): Promise<C
       
       return {
         id: category.id as string,
-        name: category.name as string,
-        description: category.description as string,
+        name: t(category.name as string, category.name_es as string, locale),
+        description: t(category.description as string, category.description_es as string, locale),
         icon: category.icon as string,
         services: services.map(s => ({
           id: s.id as string,
-          title: s.title as string,
+          title: t(s.title as string, s.title_es as string, locale),
           price: s.price as number,
           image: s.image as string,
         })),

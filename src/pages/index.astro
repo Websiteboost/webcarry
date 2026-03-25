@@ -5,10 +5,12 @@ import CategoryBadges from '../components/astro/CategoryBadges.astro';
 import GameCards from '../components/react/GameCards';
 import GlitchLogo from '../components/astro/GlitchLogo.astro';
 import BackgroundLogo from '../components/astro/BackgroundLogo.astro';
+import LanguageSelector from '../components/react/LanguageSelector';
 import { getSiteContent } from '../lib/services';
+import { readLocaleCookie } from '../lib/i18n';
 import * as LucideIcons from 'lucide-react';
 
-const siteContent = await getSiteContent();
+const siteContent = await getSiteContent(readLocaleCookie(Astro.cookies));
 const { home, games } = siteContent;
 
 // Mapear los iconos de Lucide
@@ -31,6 +33,11 @@ for (const feature of home.features.items) {
       <div class="p-6">
         <GlitchLogo logoText={home.logoText} logoImage={home.logoImage} />
       </div>
+    </div>
+
+    <!-- Language selector: fixed top-right -->
+    <div class="fixed top-4 right-4 z-50">
+      <LanguageSelector client:load />
     </div>
     
     <main class="flex-1 py-4 flex flex-col items-center">

@@ -2,6 +2,7 @@
  * Servicio para consultar políticas desde la base de datos
  */
 import { sql } from '../db';
+import { type Locale } from '../i18n';
 
 export interface PolicySection {
   title: string;
@@ -18,15 +19,12 @@ export interface PoliciesContent {
 function parsePolicySection(html: string | null): PolicySection | null {
   if (!html) return null;
   
-  // Extraer el título entre <h3></h3>
   const titleMatch = html.match(/<h3>(.*?)<\/h3>/);
   const title = titleMatch ? titleMatch[1] : '';
   
-  // Extraer el contenido entre <span></span>
   const contentMatch = html.match(/<span>(.*?)<\/span>/);
   const content = contentMatch ? contentMatch[1] : '';
   
-  // Solo retornar si tiene al menos título o contenido
   if (!title && !content) return null;
   
   return { title, content };
@@ -35,12 +33,18 @@ function parsePolicySection(html: string | null): PolicySection | null {
 /**
  * Obtiene todas las secciones de políticas desde la base de datos
  */
-export async function getPoliciesContent(): Promise<PoliciesContent> {
-  // Obtener todas las secciones de políticas
+export async function getPoliciesContent(locale: Locale = 'en'): Promise<PoliciesContent> {
   const rows = await sql`
     SELECT 
-      section_1, section_2, section_3, section_4, section_5,
-      section_6, section_7, section_8, section_9, section_10
+      section_1, section_1_es,
+      section_2, section_2_es,
+      section_3, section_3_es,
+      section_4, section_4_es,
+      section_5, section_5_es,
+      section_6, section_6_es,
+      section_7, section_7_es,
+      section_8, section_8_es,
+      section_9, section_9_es
     FROM policies
     WHERE id = 1
     LIMIT 1
@@ -51,19 +55,20 @@ export async function getPoliciesContent(): Promise<PoliciesContent> {
   }
   
   const policy = rows[0];
-  
-  // Parsear todas las secciones y filtrar las que estén vacías
   const sections: PolicySection[] = [];
   
-  for (let i = 1; i <= 10; i++) {
-    const sectionKey = `section_${i}` as keyof typeof policy;
-    const parsed = parsePolicySection(policy[sectionKey] as string | null);
-    if (parsed) {
-      sections.push(parsed);
-    }
+  for (let i = 1; i <= 9; i++) {
+    const enKey = `section_${i}` as keyof typeof policy;
+    const esKey = `section_${i}_es` as keyof typeof policy;
+    
+    // Elegir la versión ES si existe y el locale es es, si no usar EN
+    const rawEs = policy[esKey] as string | null;
+    const rawEn = policy[enKey] as string | null;
+    const raw = (locale === 'es' && rawEs && rawEs.trim() !== '') ? rawEs : rawEn;
+    
+    const parsed = parsePolicySection(raw as string | null);
+    if (parsed) sections.push(parsed);
   }
   
-  return {
-    sections,
-  };
+  return { sections };
 }

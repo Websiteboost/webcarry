@@ -5,9 +5,11 @@ interface Props {
   barPrice: BarPrice;
   onValueChange: (minValue: number, maxValue: number) => void;
   title?: string;
+  fromLabel?: string;
+  toLabel?: string;
 }
 
-function IncrementalBar({ barPrice, onValueChange, title = "Select Value" }: Props) {
+function IncrementalBar({ barPrice, onValueChange, title = "Select Value", fromLabel, toLabel }: Props) {
   const { defaultRange, progressValue = 1, mode, breakpoints } = barPrice;
   
   // Calcular initValue y finalValue según el modo
@@ -311,7 +313,7 @@ function IncrementalBar({ barPrice, onValueChange, title = "Select Value" }: Pro
         {/* Valores actuales con rango - Editables */}
         <div className="flex items-center justify-between gap-4">
           <div className="flex-1 text-center glass-effect rounded-md p-2 border border-pink-neon/20">
-            <label htmlFor="min-value-input" className="text-xs text-cyber-white/60 block mb-1">From</label>
+            <label htmlFor="min-value-input" className="text-xs text-cyber-white/60 block mb-1">{fromLabel ?? 'From'}</label>
             <input
               id="min-value-input"
               type="text"
@@ -330,7 +332,7 @@ function IncrementalBar({ barPrice, onValueChange, title = "Select Value" }: Pro
           </svg>
           
           <div className="flex-1 text-center glass-effect rounded-md p-2 border border-blue-neon/20">
-            <label htmlFor="max-value-input" className="text-xs text-cyber-white/60 block mb-1">To</label>
+            <label htmlFor="max-value-input" className="text-xs text-cyber-white/60 block mb-1">{toLabel ?? 'To'}</label>
             <input
               id="max-value-input"
               type="text"

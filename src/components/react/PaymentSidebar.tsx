@@ -1,5 +1,6 @@
 import { createPortal } from 'react-dom';
 import type { Service, Region, AccordionContent } from '../../types';
+import type { UiTexts } from '../../lib/services/ui-texts';
 import Accordion from './Accordion';
 import { usePaymentState } from './payment/usePaymentState';
 import { usePaymentPrice } from './payment/usePaymentPrice';
@@ -17,9 +18,10 @@ interface Props {
   accordionContent: AccordionContent;
   paymentDisclaimer?: string;
   euroValue?: number;
+  uiTexts?: UiTexts;
 }
 
-export default function PaymentSidebar({ service, isOpen, onClose, accordionContent, paymentDisclaimer, euroValue = 1.08 }: Props) {
+export default function PaymentSidebar({ service, isOpen, onClose, accordionContent, paymentDisclaimer, euroValue = 1.08, uiTexts }: Props) {
   const { formatPrice, symbol } = useCurrency(euroValue);
   const ps = usePaymentState(service);
   const discount = useDiscount(service?.id ?? undefined);
@@ -83,7 +85,7 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
           <div className="p-6 pb-32 sm:pb-6 pt-32 lg:pt-6">
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-pink-neon neon-text">Checkout</h2>
+              <h2 className="text-2xl font-bold text-pink-neon neon-text">{uiTexts?.checkout ?? 'Checkout'}</h2>
               <button
                 onClick={onClose}
                 className="text-cyber-white hover:text-pink-neon transition-colors p-2"
@@ -106,7 +108,7 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
             {/* Region Selection */}
             <div className="mb-6">
               <label className="block text-base font-medium text-cyber-white mb-3">
-                Select Region
+                {uiTexts?.selectRegion ?? 'Select Region'}
               </label>
               <div className="flex gap-3">
                 {(['EU', 'US'] as Region[]).map((region) => (
@@ -138,6 +140,7 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
                 isComponentSatisfied={ps.isComponentSatisfied}
                 formatPrice={formatPrice}
                 currencySymbol={symbol}
+                uiTexts={uiTexts}
               />
             ))}
 
@@ -166,6 +169,7 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
               onPayPalError={ps.handlePayPalError}
               onPayPalCancel={ps.handlePayPalCancel}
               paymentDisclaimer={paymentDisclaimer}
+              uiTexts={uiTexts}
             />
 
             {/* Mobile Accordion */}

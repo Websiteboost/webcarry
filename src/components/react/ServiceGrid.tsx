@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { Service, AccordionContent } from '../../types';
+import type { UiTexts } from '../../lib/services/ui-texts';
 import PaymentSidebar from './PaymentSidebar';
 import { useCurrency } from '../../hooks/useCurrency';
 
@@ -24,9 +25,10 @@ interface Props {
   paymentDisclaimer?: string;
   euroValue?: number;
   onServiceSelect?: (service: Service) => void;
+  uiTexts?: UiTexts;
 }
 
-export default function ServiceGrid({ initialServices, accordionContent, categories, paymentDisclaimer, euroValue = 1.08, onServiceSelect }: Props) {
+export default function ServiceGrid({ initialServices, accordionContent, categories, paymentDisclaimer, euroValue = 1.08, onServiceSelect, uiTexts }: Props) {
   const { formatPrice, currency } = useCurrency(euroValue);
   const [services, setServices] = useState<Service[]>([]);
   const [categorizedServices, setCategorizedServices] = useState<CategoryWithServices[]>([]);
@@ -137,7 +139,7 @@ export default function ServiceGrid({ initialServices, accordionContent, categor
   if (!services || services.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-cyber-white/70 text-lg">No services available for this game.</p>
+        <p className="text-cyber-white/70 text-lg">{uiTexts?.noServices ?? 'No services available for this game.'}</p>
       </div>
     );
   }
@@ -217,7 +219,7 @@ export default function ServiceGrid({ initialServices, accordionContent, categor
                       onClick={() => handleServiceSelect(service)}
                       className="bg-linear-to-r from-pink-neon to-purple-neon px-7 py-3 rounded-md font-semibold text-base text-cyber-white hover:shadow-lg hover:shadow-pink-neon/50 transition-all hover:scale-105 shrink-0"
                     >
-                      Buy
+                      {uiTexts?.buyButton ?? 'Buy'}
                     </button>
                   </div>
                 </div>
@@ -235,6 +237,7 @@ export default function ServiceGrid({ initialServices, accordionContent, categor
         accordionContent={accordionContent}
         paymentDisclaimer={paymentDisclaimer}
         euroValue={euroValue}
+        uiTexts={uiTexts}
       />
     </div>
   );

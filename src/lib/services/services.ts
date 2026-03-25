@@ -3,21 +3,26 @@
  */
 import { sql } from '../db';
 import type { Service, BarPriceConfig, BoxPriceItem, CustomPriceConfig, SelectorConfig } from '../../types';
+import { t, tArray, mergeConfigEs, type Locale } from '../i18n';
 
 interface ServiceRow {
   id: string;
   title: string;
+  title_es?: string;
   category_id: string;
   price: number;
   image: string;
   description: string[];
+  description_es?: string[];
   service_points?: string[];
+  service_points_es?: string[];
 }
 
 interface ServicePriceRow {
   id: string;
   type: 'bar' | 'box' | 'custom' | 'selectors' | 'additional' | 'boxtitle' | 'labeltitle' | 'group';
   config: any;
+  config_es: any;
   display_order: number;
   required: boolean;
   estimated_time: number;
@@ -29,19 +34,15 @@ interface ServicePriceRow {
 /**
  * Obtiene todos los servicios con sus configuraciones de precio y juegos asociados
  */
-export async function getAllServices(): Promise<Service[]> {
+export async function getAllServices(locale: Locale = 'en'): Promise<Service[]> {
   const rows = await sql`
-    SELECT id, title, category_id, price, image, description, service_points, created_at, updated_at
+    SELECT id, title, title_es, category_id, price, image, description, description_es, service_points, service_points_es
     FROM services
     ORDER BY category_id, display_order ASC
   ` as ServiceRow[];
   
-  // Para cada servicio, obtener sus precios y juegos
   const services = await Promise.all(
-    rows.map(async (row) => {
-      const service = await buildServiceFromRow(row);
-      return service;
-    })
+    rows.map(async (row) => buildServiceFromRow(row, locale))
   );
   
   return services;
@@ -50,9 +51,9 @@ export async function getAllServices(): Promise<Service[]> {
 /**
  * Obtiene un servicio por su ID
  */
-export async function getServiceById(serviceId: string): Promise<Service | null> {
+export async function getServiceById(serviceId: string, locale: Locale = 'en'): Promise<Service | null> {
   const rows = await sql`
-    SELECT id, title, category_id, price, image, description, service_points, created_at, updated_at
+    SELECT id, title, title_es, category_id, price, image, description, description_es, service_points, service_points_es
     FROM services
     WHERE id = ${serviceId}
     LIMIT 1
@@ -60,22 +61,22 @@ export async function getServiceById(serviceId: string): Promise<Service | null>
   
   if (rows.length === 0) return null;
   
-  return await buildServiceFromRow(rows[0]);
+  return buildServiceFromRow(rows[0], locale);
 }
 
 /**
  * Obtiene servicios por categoría
  */
-export async function getServicesByCategory(categoryId: string): Promise<Service[]> {
+export async function getServicesByCategory(categoryId: string, locale: Locale = 'en'): Promise<Service[]> {
   const rows = await sql`
-    SELECT id, title, category_id, price, image, description, service_points, created_at, updated_at
+    SELECT id, title, title_es, category_id, price, image, description, description_es, service_points, service_points_es
     FROM services
     WHERE category_id = ${categoryId}
     ORDER BY display_order ASC
   ` as ServiceRow[];
   
   const services = await Promise.all(
-    rows.map(async (row) => await buildServiceFromRow(row))
+    rows.map(async (row) => buildServiceFromRow(row, locale))
   );
   
   return services;
@@ -84,9 +85,10 @@ export async function getServicesByCategory(categoryId: string): Promise<Service
 /**
  * Obtiene servicios disponibles para un juego específico
  */
-export async function getServicesByGame(gameId: string): Promise<Service[]> {
+export async function getServicesByGame(gameId: string, locale: Locale = 'en'): Promise<Service[]> {
   const rows = await sql`
-    SELECT DISTINCT s.id, s.title, s.category_id, s.price, s.image, s.description, s.service_points, s.created_at, s.updated_at, s.display_order
+    SELECT DISTINCT s.id, s.title, s.title_es, s.category_id, s.price, s.image,
+                    s.description, s.description_es, s.service_points, s.service_points_es, s.display_order
     FROM services s
     INNER JOIN service_games sg ON s.id = sg.service_id
     WHERE sg.game_id = ${gameId}
@@ -94,7 +96,7 @@ export async function getServicesByGame(gameId: string): Promise<Service[]> {
   ` as ServiceRow[];
   
   const services = await Promise.all(
-    rows.map(async (row) => await buildServiceFromRow(row))
+    rows.map(async (row) => buildServiceFromRow(row, locale))
   );
   
   return services;
@@ -103,10 +105,10 @@ export async function getServicesByGame(gameId: string): Promise<Service[]> {
 /**
  * Construye un objeto Service completo desde un row de base de datos
  */
-async function buildServiceFromRow(row: ServiceRow): Promise<Service> {
+async function buildServiceFromRow(row: ServiceRow, locale: Locale = 'en'): Promise<Service> {
   // Obtener configuraciones de precios con order y group_id
   const priceRows = await sql`
-    SELECT id, type, config, display_order, required, estimated_time, discount_percent, group_id, created_at
+    SELECT id, type, config, config_es, display_order, required, estimated_time, discount_percent, group_id, created_at
     FROM service_prices
     WHERE service_id = ${row.id}
     ORDER BY display_order ASC, created_at ASC
@@ -120,15 +122,22 @@ async function buildServiceFromRow(row: ServiceRow): Promise<Service> {
   `;
   const games = gameRows.map(g => g.game_id);
   
-  // Construir objeto service
+  // Construir objeto service con campos traducidos
   const service: Service = {
     id: row.id,
-    title: row.title,
+    title: t(row.title, row.title_es, locale),
     categoryId: row.category_id,
     price: row.price,
     image: row.image,
-    description: row.description,
-    service_points: row.service_points && Array.isArray(row.service_points) && row.service_points.length > 0 ? row.service_points : undefined,
+    description: tArray(row.description, row.description_es, locale),
+    service_points: (() => {
+      const pts = tArray(
+        row.service_points && row.service_points.length > 0 ? row.service_points : null,
+        row.service_points_es,
+        locale,
+      );
+      return pts.length > 0 ? pts : undefined;
+    })(),
     games: games.length > 0 ? games : undefined,
     components: [],
   };
@@ -137,6 +146,9 @@ async function buildServiceFromRow(row: ServiceRow): Promise<Service> {
   const componentMap = new Map<string, import('../../types').ServiceComponent>();
 
   priceRows.forEach((priceRow) => {
+    // Resolver config con traducción si aplica
+    const resolvedConfig = mergeConfigEs(priceRow.type, priceRow.config, priceRow.config_es, locale);
+
     const component: import('../../types').ServiceComponent = {
       id: priceRow.id,
       type: priceRow.type,
@@ -149,27 +161,27 @@ async function buildServiceFromRow(row: ServiceRow): Promise<Service> {
 
     switch (priceRow.type) {
       case 'group':
-        component.data = priceRow.config;
+        component.data = resolvedConfig;
         component.children = [];
         break;
       case 'bar':
-        service.barPrice = priceRow.config as BarPriceConfig;
-        component.data = priceRow.config;
+        service.barPrice = resolvedConfig as BarPriceConfig;
+        component.data = resolvedConfig;
         break;
       case 'box':
-        service.boxPrice = (priceRow.config.options || []) as BoxPriceItem[];
-        component.data = priceRow.config;
+        service.boxPrice = (resolvedConfig.options || []) as BoxPriceItem[];
+        component.data = resolvedConfig;
         break;
       case 'custom':
-        service.customPrice = { enabled: true, ...priceRow.config } as CustomPriceConfig;
-        component.data = priceRow.config;
+        service.customPrice = { enabled: true, ...resolvedConfig } as CustomPriceConfig;
+        component.data = resolvedConfig;
         break;
       case 'selectors':
-        service.selectors = priceRow.config as SelectorConfig;
-        component.data = priceRow.config;
+        service.selectors = resolvedConfig as SelectorConfig;
+        component.data = resolvedConfig;
         break;
       case 'additional': {
-        const { title, ...additionalOptions } = priceRow.config;
+        const { title, ...additionalOptions } = resolvedConfig;
         service.additionalServices = additionalOptions;
         service.additionalServicesTitle = title || 'Additional Services';
         component.data = { title, options: additionalOptions };
@@ -177,19 +189,19 @@ async function buildServiceFromRow(row: ServiceRow): Promise<Service> {
       }
       case 'boxtitle':
         if (!service.boxTitles) service.boxTitles = [];
-        if (priceRow.config.options && Array.isArray(priceRow.config.options)) {
-          service.boxTitles = priceRow.config.options;
+        if (resolvedConfig.options && Array.isArray(resolvedConfig.options)) {
+          service.boxTitles = resolvedConfig.options;
         }
-        component.data = priceRow.config;
+        component.data = resolvedConfig;
         break;
       case 'labeltitle':
         if (!service.serviceTitles) service.serviceTitles = [];
         service.serviceTitles.push({
           id: priceRow.id,
-          title: priceRow.config.title || '',
+          title: resolvedConfig.title || '',
           order: service.serviceTitles.length,
         });
-        component.data = priceRow.config;
+        component.data = resolvedConfig;
         break;
     }
 

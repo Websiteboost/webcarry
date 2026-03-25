@@ -2,6 +2,8 @@
  * Punto de entrada para todos los servicios de base de datos
  * Exporta todas las funciones de consulta en un solo lugar
  */
+export type { Locale } from '../i18n';
+export { readLocaleCookie } from '../i18n';
 
 // Games
 export { getAllGames, getGameById, getGamesByCategory } from './games';
@@ -34,18 +36,22 @@ export type { PaymentConfig } from './payment';
 export { getPoliciesContent } from './policies';
 export type { PoliciesContent, PolicySection } from './policies';
 
+// UI Texts
+export { getUiTexts } from './ui-texts';
+export type { UiTexts } from './ui-texts';
+
 /**
  * Función helper para obtener todo el contenido del sitio de una vez
  * Útil para páginas que necesitan múltiples datos
  */
-export async function getSiteContent() {
+export async function getSiteContent(locale: import('../i18n').Locale = 'en') {
   const [home, games, categories, services, accordion, footer] = await Promise.all([
-    import('./home').then(m => m.getHomeContent()),
+    import('./home').then(m => m.getHomeContent(locale)),
     import('./games').then(m => m.getAllGames()),
-    import('./categories').then(m => m.getCategoriesWithServices()),
-    import('./services').then(m => m.getAllServices()),
-    import('./accordion').then(m => m.getAccordionContent()),
-    import('./footer').then(m => m.getFooterContent()),
+    import('./categories').then(m => m.getCategoriesWithServices(locale)),
+    import('./services').then(m => m.getAllServices(locale)),
+    import('./accordion').then(m => m.getAccordionContent(locale)),
+    import('./footer').then(m => m.getFooterContent(locale)),
   ]);
   
   return {

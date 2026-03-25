@@ -9,11 +9,14 @@ import {
   getGameById, 
   getServicesByGame,
   getCategoriesWithServicesByGame,
-  getPaymentConfig
+  getPaymentConfig,
+  getUiTexts
 } from '../../lib/services';
+import { readLocaleCookie } from '../../lib/i18n';
 
 // Modo SSR dinámico - consulta DB en cada request
 const { id } = Astro.params;
+const locale = readLocaleCookie(Astro.cookies);
 const game = await getGameById(id as string);
 
 if (!game) {
@@ -21,17 +24,20 @@ if (!game) {
 }
 
 // Obtener servicios específicos de este juego desde la DB
-const gameServices = await getServicesByGame(game.id);
+const gameServices = await getServicesByGame(game.id, locale);
 
 // Obtener categorías filtradas por este juego con sus servicios
-const gameCategories = await getCategoriesWithServicesByGame(game.id);
+const gameCategories = await getCategoriesWithServicesByGame(game.id, locale);
 
 // Obtener accordion para la UI
-const siteContent = await getSiteContent();
+const siteContent = await getSiteContent(locale);
 const { accordion, home } = siteContent;
 
 // Obtener configuración de pago
-const paymentConfig = await getPaymentConfig();
+const paymentConfig = await getPaymentConfig(locale);
+
+// Obtener textos de UI traducidos
+const uiTexts = await getUiTexts(locale);
 ---
 
 <MainLayout title={`${game.title} - ${home.title}`}>
@@ -57,6 +63,7 @@ const paymentConfig = await getPaymentConfig();
         accordionContent={accordion}
         paymentDisclaimer={paymentConfig.disclaimer}
         euroValue={paymentConfig.euroValue}
+        uiTexts={uiTexts}
       />
     </div>
   </main>

@@ -2,6 +2,7 @@
  * Servicio para consultar footer desde la base de datos
  */
 import { sql } from '../db';
+import { t, type Locale } from '../i18n';
 
 export interface PaymentMethod {
   name: string;
@@ -17,15 +18,24 @@ export interface Footer {
   paymentMethods: PaymentMethod[];
   /** USD value of 1 EUR (e.g. 1.08 means 1 EUR = $1.08 USD) */
   euroValue: number;
+  communityLabel: string;
+  discordLabel: string;
+  workUsLabel: string;
 }
 
 /**
  * Obtiene el contenido del footer
  */
-export async function getFooterContent(): Promise<Footer> {
+export async function getFooterContent(locale: Locale = 'en'): Promise<Footer> {
   // Obtener site_config para los textos
   const configRows = await sql`
-    SELECT footer_payment_title, footer_copyright, disclaimer, discord_link, discord_work_us, euro_value
+    SELECT footer_payment_title, footer_payment_title_es,
+           footer_copyright, footer_copyright_es,
+           disclaimer, disclaimer_es,
+           discord_link, discord_work_us, euro_value,
+           footer_community_label, footer_community_label_es,
+           footer_discord_label, footer_discord_label_es,
+           footer_work_us_label, footer_work_us_label_es
     FROM site_config
     WHERE id = 1
     LIMIT 1
@@ -45,12 +55,15 @@ export async function getFooterContent(): Promise<Footer> {
   `;
   
   return {
-    paymentMethodsTitle: config.footer_payment_title,
-    copyrightText: config.footer_copyright,
-    disclaimer: config.disclaimer || 'All services are provided for entertainment purposes only.',
+    paymentMethodsTitle: t(config.footer_payment_title, config.footer_payment_title_es, locale),
+    copyrightText: t(config.footer_copyright, config.footer_copyright_es, locale),
+    disclaimer: t(config.disclaimer, config.disclaimer_es, locale) || 'All services are provided for entertainment purposes only.',
     discordLink: config.discord_link,
     discordWorkUs: config.discord_work_us,
     euroValue: Number(config.euro_value ?? 1.08),
+    communityLabel: t(config.footer_community_label ?? 'Community',   config.footer_community_label_es, locale),
+    discordLabel:   t(config.footer_discord_label   ?? 'Join Discord', config.footer_discord_label_es,   locale),
+    workUsLabel:    t(config.footer_work_us_label   ?? 'Work with Us', config.footer_work_us_label_es,   locale),
     paymentMethods: paymentRows.map(row => ({
       name: row.name,
       type: row.type as 'paypal' | 'card',

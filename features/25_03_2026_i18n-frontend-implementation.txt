@@ -1,0 +1,429 @@
+FEATURE: Internacionalización Frontend — Selector de Idioma EN/ES
+FECHA: 25/03/2026
+ESTADO: En planificación
+DEPENDENCIA: 24_03_2026_i18n-spanish-fields.txt (migraciones SQL ya ejecutadas)
+
+================================================================================
+RESUMEN
+================================================================================
+Implementar el selector de idioma EN/ES en el frontend Webcarry.
+El idioma se persiste vía cookie HTTP-only de lado cliente llamada `bb_lang`.
+En cada request SSR, Astro lee esa cookie y pasa el locale a las funciones
+de base de datos, que seleccionan los campos `_es` y aplican fallback a inglés
+si el campo español está vacío o nulo. Los componentes React reciben ya los
+textos resueltos como props — sin lógica de traducción en el cliente.
+
+Arquitectura elegida: "SSR translate + pass as props"
+  - ✅ SEO-friendly (los bots ven HTML ya traducido)
+  - ✅ Sin bundle de i18n en el cliente
+  - ✅ React islands reciben strings simples, no diccionarios
+  - ✅ Fallback automático en la capa de datos
+  - ✅ Un solo reload al cambiar idioma (igual que al cambiar moneda no aplica,
+       aquí sí es necesario porque el texto viene del SSR)
+
+================================================================================
+COOKIE
+================================================================================
+  Nombre : bb_lang
+  Valores: "EN" (default) | "ES"
+  TTL    : 1 año (365 días)
+  Path   : /
+  Default: si no existe la cookie → se asume "EN" (sin cambiar nada del flujo
+            actual, backwards compatible 100%)
+  SameSite: Lax (no hace falta Secure, es solo preferencia de UI)
+
+================================================================================
+POSICIONAMIENTO DEL SELECTOR
+================================================================================
+
+HOME (src/pages/index.astro):
+  - Esquina superior derecha, fixed
+  - Mismo nivel z-index que el logo (z-50)
+  - Layout: `fixed top-6 right-6 z-50`
+  - Sin CurrencySelector en el home → el LanguageSelector va solo
+
+GAME INTERNAL (src/pages/game/[id].astro):
+  - Junto al CurrencySelector existente, a su IZQUIERDA
+  - Ambos en el header del GamePageView (PaymentSidebar area superior)
+  - Modificar GamePageView para recibir `locale` y renderizar el par
+    [LanguageSelector | CurrencySelector] en la barra superior derecha
+
+================================================================================
+ARCHIVOS A CREAR
+================================================================================
+
+1. src/hooks/useLanguage.ts
+   - Hook React para leer/escribir la cookie bb_lang
+   - Patrón idéntico a useCurrency.ts (sin SSR mismatch)
+   - Expone: { locale, changeLocale }
+   - Al cambiar locale: escribe cookie + window.location.reload()
+     (reload necesario para que Astro re-renderice con nuevos textos de DB)
+
+2. src/components/react/LanguageSelector.tsx
+   - Pill toggle igual que CurrencySelector, con banderas SVG inline
+   - Banderas: 🇺🇸 USA (EN) y 🇪🇸 España (ES) — SVG inline, sin fetch externo
+   - Estado inicial siempre "EN" para evitar hydration mismatch;
+     real valor se aplica en useEffect
+   - client:load  (necesita interacción inmediata)
+
+================================================================================
+ARCHIVOS A MODIFICAR
+================================================================================
+
+3. src/lib/services/home.ts
+   - getHomeContent(locale: Locale): HomeContent
+   - SELECT home_title, home_title_es, home_subtitle, home_subtitle_es,
+             accordion_title, accordion_title_es,
+             footer_payment_title, footer_payment_title_es,
+             footer_copyright, footer_copyright_es,
+             disclaimer, disclaimer_es, payment_disclaimer, payment_disclaimer_es
+   - Aplicar helper t() en cada campo
+
+4. src/lib/services/categories.ts
+   - getAllCategories(locale: Locale)
+   - getCategoriesWithServices(locale: Locale)
+   - getCategoriesWithServicesByGame(gameId, locale: Locale)
+   - SELECT name, name_es, description, description_es
+
+5. src/lib/services/services.ts
+   - getAllServices(locale: Locale)
+   - getServiceById(id, locale: Locale)
+   - getServicesByCategory(categoryId, locale: Locale)
+   - getServicesByGame(gameId, locale: Locale)
+   - SELECT title, title_es, description, description_es,
+             service_points, service_points_es
+   - Para service_prices: SELECT config, config_es
+     → mergeConfigEs(config, config_es, locale) aplica textos ES sobre config EN
+
+6. src/lib/services/accordion.ts
+   - getAccordionContent(locale: Locale)
+   - SELECT title, title_es, content, content_es desde accordion_items
+   - SELECT accordion_title, accordion_title_es desde site_config
+
+7. src/lib/services/footer.ts
+   - getFooterContent(locale: Locale)
+   - SELECT footer_payment_title, footer_payment_title_es,
+             footer_copyright, footer_copyright_es,
+             disclaimer, disclaimer_es
+
+8. src/lib/services/policies.ts
+   - getPoliciesContent(locale: Locale)
+   - SELECT section_1..9 + section_1_es..9_es
+   - Fallback parseo: si section_N_es no está vacío → usar _es, si no → _en
+
+9. src/lib/services/index.ts
+   - getSiteContent(locale: Locale) — pasar locale a todas las llamadas
+   - Exportar tipo Locale
+
+10. src/lib/i18n.ts  ← NUEVO ARCHIVO
+    - Tipo: export type Locale = 'en' | 'es'
+    - Helper: t(en, es, locale) con fallback
+    - Helper: tArray(en, es, locale) para campos TEXT[] (description, service_points)
+    - Helper: mergeConfigEs(config, config_es, locale) para JSONB de service_prices
+    - Helper: readLocaleCookie(cookies: AstroCookies): Locale
+
+11. src/pages/index.astro
+    - Leer cookie bb_lang → locale
+    - Pasar locale a getSiteContent(locale)
+    - Añadir <LanguageSelector client:load /> en top-right fixed
+
+12. src/pages/game/[id].astro
+    - Leer cookie bb_lang → locale
+    - Pasar locale a getServicesByGame, getCategoriesWithServicesByGame, getSiteContent
+    - Pasar locale como prop a <GamePageView locale={locale} ... />
+
+13. src/pages/policies.astro
+    - Leer cookie bb_lang → locale
+    - Pasar locale a getPoliciesContent(locale) y getSiteContent(locale)
+
+14. src/components/react/GamePageView.tsx
+    - Recibir prop locale: Locale
+    - Renderizar [LanguageSelector | CurrencySelector] en la barra superior derecha
+    - Pasar locale down a ServiceGrid si fuera necesario (en este caso no,
+      los textos ya llegan resueltos desde SSR en initialServices)
+
+================================================================================
+DETALLE TÉCNICO — HELPER mergeConfigEs
+================================================================================
+
+La tabla service_prices tiene config (JSONB) y config_es (JSONB).
+config_es solo tiene las claves de texto traducibles; los valores numéricos
+no existen en config_es (por diseño del CMS).
+
+Ejemplo config (bar):
+  { "label": "Current Rank", "initValue": 0, "finalValue": 100 }
+Ejemplo config_es (bar):
+  { "label_es": "Rango Actual" }
+
+Merge result ES:
+  { "label": "Rango Actual", "initValue": 0, "finalValue": 100 }
+
+Reglas por tipo de componente:
+  bar:
+    config.label = config_es.label_es  (si existe)
+
+  box:
+    config.options[i].label = config_es.options[i].label_es  (si existe)
+    (match por índice)
+
+  boxtitle:
+    config.options[i].label = config_es.options[i].label_es  (si existe)
+    config.options[i].data  = config_es.options[i].data_es   (si existe)
+
+  selectors:
+    Para cada selector (clave del objeto):
+      si config_es tiene esa misma clave → sustituir título
+      config[key][i].label = config_es[key][i].label_es       (si existe)
+
+  additional:
+    config.title = config_es.title_es  (si existe)
+    Cada addOption: config.options[key].label = config_es.options[key]  (si existe)
+
+  custom:
+    config.label = config_es.label_es  (si existe)
+    config.presets[i].label = config_es.presets[i].label_es  (si existe, si presets tiene labels)
+
+  labeltitle:
+    config.title = config_es.title_es  (si existe)
+
+  group:
+    config.title = config_es.title_es  (si existe)
+    (los hijos se procesan individualmente en su propia iteración)
+
+IMPORTANTE: mergeConfigEs nunca lanza excepciones. Usa try/catch
+internamente y ante cualquier error retorna el config original en inglés.
+Esto garantiza que un config_es malformado no rompe el frontend.
+
+================================================================================
+DETALLE TÉCNICO — COMPONENTE LanguageSelector
+================================================================================
+
+Diseño visual:
+  - Mismo contenedor pill que CurrencySelector
+  - Ancho de cada opción: ~36px (bandera 20x14px + padding)
+  - Indicador deslizante animado (translateX) igual que CurrencySelector
+  - Bandera SVG inline (sin img tag, sin fetch):
+      ES → bandera de España (roja-amarilla-roja con escudo simplificado)
+      EN → bandera de USA (barras rojas/blancas + cantón azul estrellado)
+  - Tooltip accesible: aria-label="Language: English" / "Language: Spanish"
+  - Sin texto, solo banderas (minimalista, compatible con el diseño cyberpunk)
+
+Comportamiento:
+  - Al hacer click en bandera distinta a la activa:
+      1. Escribe cookie bb_lang=ES (o EN) con Max-Age=31536000
+      2. window.location.reload() — necesario para re-fetch SSR
+  - Sin animación de transición durante reload (imposible)
+  - Estado inicial siempre EN para evitar SSR hydration mismatch
+  - En useEffect: leer cookie y actualizar estado visual (puede verse
+    el cambio visual en <100ms, aceptable)
+
+  ```tsx
+  // useLanguage.ts
+  export type Locale = 'en' | 'es';
+  const COOKIE_NAME = 'bb_lang';
+
+  function readLangCookie(): Locale {
+    try {
+      const match = document.cookie.match(/bb_lang=([^;]+)/);
+      if (match?.[1] === 'ES') return 'es';
+    } catch { /* noop */ }
+    return 'en';
+  }
+
+  export function useLanguage() {
+    const [locale, setLocale] = useState<Locale>('en'); // SSR-safe default
+
+    useEffect(() => {
+      setLocale(readLangCookie());
+    }, []);
+
+    const changeLocale = useCallback((next: Locale) => {
+      const value = next === 'es' ? 'ES' : 'EN';
+      document.cookie = `${COOKIE_NAME}=${value};path=/;max-age=31536000;SameSite=Lax`;
+      window.location.reload();
+    }, []);
+
+    return { locale, changeLocale };
+  }
+  ```
+
+================================================================================
+DETALLE TÉCNICO — LECTURA DE COOKIE EN ASTRO (SSR)
+================================================================================
+
+  ```ts
+  // src/lib/i18n.ts
+  import type { AstroCookies } from 'astro';
+
+  export type Locale = 'en' | 'es';
+
+  export function readLocaleCookie(cookies: AstroCookies): Locale {
+    const val = cookies.get('bb_lang')?.value;
+    return val === 'ES' ? 'es' : 'en';
+  }
+
+  export function t(en: string | null | undefined, es: string | null | undefined, locale: Locale): string {
+    if (locale === 'es' && es && es.trim() !== '') return es.trim();
+    return (en ?? '').trim();
+  }
+
+  export function tArray(en: string[] | null, es: string[] | null | undefined, locale: Locale): string[] {
+    if (locale === 'es' && es && es.length > 0) return es;
+    return en ?? [];
+  }
+  ```
+
+  En cada página Astro:
+  ```astro
+  ---
+  import { readLocaleCookie } from '../lib/i18n';
+  const locale = readLocaleCookie(Astro.cookies);
+  const siteContent = await getSiteContent(locale);
+  ---
+  ```
+
+================================================================================
+DETALLE TÉCNICO — PATRÓN SQL EN SERVICIOS
+================================================================================
+
+ANTES (categories.ts):
+  ```ts
+  const rows = await sql`
+    SELECT id, name, description, icon
+    FROM categories
+    ORDER BY display_order ASC
+  `;
+  return rows.map(row => ({ id: row.id, name: row.name, ... }));
+  ```
+
+DESPUÉS (categories.ts con locale):
+  ```ts
+  export async function getAllCategories(locale: Locale = 'en'): Promise<Category[]> {
+    const rows = await sql`
+      SELECT id, name, name_es, description, description_es, icon
+      FROM categories
+      ORDER BY display_order ASC
+    `;
+    return rows.map(row => ({
+      id: row.id,
+      name: t(row.name, row.name_es, locale),
+      description: t(row.description, row.description_es, locale),
+      icon: row.icon,
+    }));
+  }
+  ```
+
+REGLA: El helper t() hace el fallback. El SQL siempre selecciona ambos campos.
+No se hace lógica condicional en el SQL (evitar WHERE para esto — simple y seguro).
+
+================================================================================
+ORDEN DE IMPLEMENTACIÓN (FASES)
+================================================================================
+
+FASE 1 — Base i18n (sin tocar UI todavía)
+  [ ] Crear src/lib/i18n.ts con Locale, t(), tArray(), mergeConfigEs(), readLocaleCookie()
+  [ ] Crear src/hooks/useLanguage.ts
+
+FASE 2 — Capa de datos
+  [ ] Modificar src/lib/services/home.ts          → aceptar locale
+  [ ] Modificar src/lib/services/categories.ts    → aceptar locale
+  [ ] Modificar src/lib/services/services.ts      → aceptar locale + mergeConfigEs
+  [ ] Modificar src/lib/services/accordion.ts     → aceptar locale
+  [ ] Modificar src/lib/services/footer.ts        → aceptar locale
+  [ ] Modificar src/lib/services/policies.ts      → aceptar locale
+  [ ] Modificar src/lib/services/index.ts         → getSiteContent(locale), exportar Locale
+
+FASE 3 — Componente LanguageSelector
+  [ ] Crear src/components/react/LanguageSelector.tsx
+      - Banderas SVG inline España y USA
+      - Pill toggle igual al CurrencySelector
+      - useLanguage hook + reload
+
+FASE 4 — Integración en páginas Astro
+  [ ] Modificar src/pages/index.astro
+      - Leer cookie → locale
+      - getSiteContent(locale)
+      - Añadir <LanguageSelector client:load /> top-right fixed
+  [ ] Modificar src/pages/game/[id].astro
+      - Leer cookie → locale
+      - Pasar locale a todos los servicios
+      - Pasar locale prop a <GamePageView>
+  [ ] Modificar src/pages/policies.astro
+      - Leer cookie → locale
+      - Pasar locale a los servicios
+
+FASE 5 — Integración en GamePageView
+  [ ] Modificar src/components/react/GamePageView.tsx
+      - Recibir prop locale?: Locale
+      - Añadir LanguageSelector a la izquierda del CurrencySelector
+        en la barra de controles superior
+
+FASE 6 — Verificación
+  [ ] Probar EN → ES en home: title, subtitle, features
+  [ ] Probar EN → ES en game: categorías, servicios, accordion, disclaimer
+  [ ] Probar campo ES vacío → fallback correcto a inglés (sin error, sin "")
+  [ ] Probar service_prices con config_es: bar, box, selectors
+  [ ] Probar policies EN → ES
+  [ ] Verificar que sin cookie (primera visita) todo viene en inglés
+  [ ] Verificar que el selector visual refleja la cookie activa
+  [ ] Build de producción: pnpm build → sin errores TypeScript
+
+================================================================================
+NOTAS IMPORTANTES / DECISIONES DE DISEÑO
+================================================================================
+
+1. NO usar i18next, next-intl ni ninguna librería externa de i18n.
+   La solución es artesanal y minimal: cookie SSR + helper t().
+   Razón: el bundle se mantiene pequeño y no hay overhead de traducción
+   en cliente porque los textos llegan ya resueltos desde el servidor.
+
+2. NO modificar tipos TypeScript públicos de Service, Category, etc.
+   Esos tipos siguen siendo los mismos (solo string, no string | {en,es}).
+   La resolución ocurre en la capa de servicios ANTES de retornar.
+   Los React islands no necesitan saber nada de locales.
+
+3. El reload al cambiar idioma es INTENCIONAL y es la forma correcta
+   en un SSR puro. No intentar hacer re-fetch client-side de toda la
+   data de la página (sería reimplementar SSR en el cliente — antipatrón).
+
+4. El CurrencySelector PERMANECE usando localStorage.
+   El LanguageSelector usa cookie (para que el SSR pueda leerla).
+   Son mecanismos distintos con propósitos distintos — no unificarlos.
+
+5. Los campos home_features no tienen gestión en CMS todavía (per plan
+   CMS fase anterior). Si home_features.title_es existe en DB → se usa.
+   Si no, el SELECT title_es retornará null y t() hará fallback a inglés.
+   No hay riesgo de error.
+
+6. config_es en service_prices: mergeConfigEs usa try/catch por diseño.
+   Un config_es malformado o con estructura inesperada NUNCA rompe el site.
+   Al contrario, simplemente se ignora y se usa config inglés original.
+
+7. Backwards compatible: locale = 'en' es el default en todos los servicios.
+   Código existente que llame a getServicesByGame(gameId) sin locale
+   seguirá funcionando exactamente igual (retorna inglés).
+
+================================================================================
+SQL ADICIONAL SUGERIDO (validación post-implementación)
+================================================================================
+
+-- Verificar que los campos _es existen en las tablas afectadas
+SELECT column_name, data_type, is_nullable
+FROM information_schema.columns
+WHERE table_name IN ('categories','services','accordion_items','site_config','policies','home_features')
+  AND column_name LIKE '%_es'
+ORDER BY table_name, column_name;
+
+-- Ver cuántos registros tienen traducción ES completa en categories
+SELECT id, name, name_es,
+       CASE WHEN name_es IS NOT NULL AND name_es != '' THEN '✅' ELSE '⚠️ empty' END as status
+FROM categories;
+
+================================================================================
+DEPENDENCIAS / PREREQUISITOS
+================================================================================
+  ✅ Migraciones SQL ejecutadas (campos _es en todas las tablas)
+  ✅ Astro v6 + @astrojs/react v5 ya migrados
+  ✅ Tailwind CSS v4 configurado
+  ✅ CurrencySelector.tsx como referencia de diseño del pill toggle
+  ✅ useCurrency.ts como referencia del patrón de hook + cookie/localStorage

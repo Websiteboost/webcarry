@@ -10,6 +10,8 @@ interface Props {
   services: Service[];
   categories: CategoryInfo[];
   placeholder?: string;
+  buyLabel?: string;
+  noResultsText?: string;
 }
 
 function highlight(text: string, query: string): React.ReactNode {
@@ -27,7 +29,7 @@ function highlight(text: string, query: string): React.ReactNode {
   );
 }
 
-export default function ServiceSearch({ services, categories, placeholder = 'Search services…' }: Props) {
+export default function ServiceSearch({ services, categories, placeholder = 'Search services…', buyLabel, noResultsText }: Props) {
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
@@ -151,7 +153,7 @@ export default function ServiceSearch({ services, categories, placeholder = 'Sea
                     ? 'bg-pink-neon/20 text-pink-neon border border-pink-neon/40'
                     : 'bg-purple-neon/10 text-purple-neon/70 border border-purple-neon/20'
                 }`}>
-                  Buy
+                  {buyLabel ?? 'Buy'}
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
                   </svg>
@@ -166,7 +168,7 @@ export default function ServiceSearch({ services, categories, placeholder = 'Sea
       {isOpen && query.trim().length >= 2 && results.length === 0 && (
         <div className="absolute top-full left-0 right-0 mt-2 z-50 rounded-xl border border-purple-neon/20 px-4 py-5 text-center"
           style={{ background: 'rgba(26,11,46,0.97)', backdropFilter: 'blur(16px)' }}>
-          <p className="text-cyber-white/40 text-sm">No services match <span className="text-cyber-white/70">"{query}"</span></p>
+          <p className="text-cyber-white/40 text-sm">{noResultsText ?? 'No services match'} <span className="text-cyber-white/70">"{query}"</span></p>
         </div>
       )}
     </>
@@ -232,7 +234,7 @@ export default function ServiceSearch({ services, categories, placeholder = 'Sea
               value={query}
               onChange={e => { setQuery(e.target.value); setIsOpen(true); }}
               onKeyDown={handleKeyDown}
-              placeholder="Search…"
+              placeholder={placeholder}
               className="flex-1 bg-transparent text-sm text-cyber-white placeholder-cyber-white/30 outline-none w-32"
               autoComplete="off"
               spellCheck={false}

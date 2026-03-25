@@ -1,0 +1,33 @@
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS name_es VARCHAR(255);
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS description_es TEXT;
+
+ALTER TABLE services ADD COLUMN IF NOT EXISTS title_es VARCHAR(255);
+ALTER TABLE services ADD COLUMN IF NOT EXISTS description_es TEXT[];
+ALTER TABLE services ADD COLUMN IF NOT EXISTS service_points_es TEXT[];
+
+ALTER TABLE service_prices ADD COLUMN IF NOT EXISTS config_es JSONB;
+
+ALTER TABLE accordion_items ADD COLUMN IF NOT EXISTS title_es VARCHAR(255);
+ALTER TABLE accordion_items ADD COLUMN IF NOT EXISTS content_es TEXT;
+
+ALTER TABLE home_features ADD COLUMN IF NOT EXISTS title_es VARCHAR(255);
+ALTER TABLE home_features ADD COLUMN IF NOT EXISTS description_es TEXT;
+
+ALTER TABLE site_config ADD COLUMN IF NOT EXISTS home_title_es VARCHAR(255);
+ALTER TABLE site_config ADD COLUMN IF NOT EXISTS home_subtitle_es TEXT;
+ALTER TABLE site_config ADD COLUMN IF NOT EXISTS accordion_title_es VARCHAR(255);
+ALTER TABLE site_config ADD COLUMN IF NOT EXISTS footer_payment_title_es VARCHAR(255);
+ALTER TABLE site_config ADD COLUMN IF NOT EXISTS footer_copyright_es TEXT;
+ALTER TABLE site_config ADD COLUMN IF NOT EXISTS payment_disclaimer_es TEXT;
+ALTER TABLE site_config ADD COLUMN IF NOT EXISTS disclaimer_es TEXT;
+
+ALTER TABLE policies ADD COLUMN IF NOT EXISTS section_1_es TEXT;
+ALTER TABLE policies ADD COLUMN IF NOT EXISTS section_2_es TEXT;
+ALTER TABLE policies ADD COLUMN IF NOT EXISTS section_3_es TEXT;
+ALTER TABLE policies ADD COLUMN IF NOT EXISTS section_4_es TEXT;
+ALTER TABLE policies ADD COLUMN IF NOT EXISTS section_5_es TEXT;
+ALTER TABLE policies ADD COLUMN IF NOT EXISTS section_6_es TEXT;
+ALTER TABLE policies ADD COLUMN IF NOT EXISTS section_7_es TEXT;
+ALTER TABLE policies ADD COLUMN IF NOT EXISTS section_8_es TEXT;
+ALTER TABLE policies ADD COLUMN IF NOT EXISTS section_9_es TEXT;
+ALTER TABLE policies ADD COLUMN IF NOT EXISTS section_10_es TEXT;

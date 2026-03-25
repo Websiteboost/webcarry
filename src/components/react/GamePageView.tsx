@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import * as Icons from 'lucide-react';
 import type { Service, AccordionContent } from '../../types';
+import type { UiTexts } from '../../lib/services/ui-texts';
 import CategorySidebar from './CategorySidebar';
 import ServiceGrid from './ServiceGrid';
 import MobileMenu from './MobileMenu';
 import ServiceSearch from './ServiceSearch';
 import CurrencySelector from './CurrencySelector';
+import LanguageSelector from './LanguageSelector';
 
 interface CategoryInfo {
   id: string;
@@ -23,6 +25,7 @@ interface Props {
   accordionContent: AccordionContent;
   paymentDisclaimer?: string;
   euroValue?: number;
+  uiTexts: UiTexts;
 }
 
 const getIcon = (iconName: string) => {
@@ -38,6 +41,7 @@ export default function GamePageView({
   accordionContent,
   paymentDisclaimer,
   euroValue = 1.08,
+  uiTexts,
 }: Props) {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
 
@@ -107,16 +111,32 @@ export default function GamePageView({
         categories={categories as any}
         currentCategoryId={selectedCategoryId ?? undefined}
         onCategoryChange={handleCategorySelect}
+        categoriesLabel={uiTexts.categoriesLabel}
       />
 
-      {/* Currency selector — desktop only, fixed top-right */}
-      <div className="hidden lg:block fixed top-4 right-4 z-50">
-        <CurrencySelector euroValue={euroValue} />
+      {/* Language + Currency selectors — desktop only, fixed top-right */}
+      <div className="hidden lg:flex items-center gap-3 fixed top-4 right-4 z-50">
+        <LanguageSelector />
+        <div
+          aria-hidden="true"
+          style={{
+            width: '1px',
+            alignSelf: 'stretch',
+            background: 'rgba(168,85,247,0.2)',
+            margin: '4px 0',
+          }}
+        />
+        <CurrencySelector euroValue={euroValue} label={uiTexts.currencyLabel} />
+      </div>
+
+      {/* Language selector — mobile only, below the top bar row, covered by mobile menu overlay */}
+      <div className="lg:hidden fixed top-18 left-5 z-35">
+        <LanguageSelector />
       </div>
 
       {/* Mobile search icon — sits to the right of the hamburger in fixed top bar */}
       <div className="lg:hidden fixed top-4 left-17.5 z-50">
-        <ServiceSearch services={initialServices} categories={categories} />
+        <ServiceSearch services={initialServices} categories={categories} placeholder={uiTexts.searchPlaceholder} buyLabel={uiTexts.buyButton} noResultsText={uiTexts.searchNoResults} />
       </div>
 
       <div className="flex flex-col lg:flex-row">
@@ -127,6 +147,7 @@ export default function GamePageView({
               categories={categories as any}
               currentCategoryId={selectedCategoryId ?? undefined}
               onCategoryChange={handleCategorySelect}
+              categoriesLabel={uiTexts.categoriesLabel}
             />
           </div>
         </div>
@@ -136,8 +157,8 @@ export default function GamePageView({
 
           {/* Breadcrumb + desktop search row */}
           <div className="flex items-center justify-between gap-4 mb-8">
-            <nav className="flex items-center space-x-2 text-sm">
-              <span className="text-blue-neon/50 cursor-default">{gameTitle}</span>
+            <nav className="flex items-center space-x-2 text-sm min-w-0 overflow-hidden">
+              <span className="text-blue-neon/50 cursor-default truncate max-w-25 sm:max-w-45 lg:max-w-none">{gameTitle}</span>
               {selectedCategory && (
                 <>
                   <span className="text-cyber-white/30">/</span>
@@ -145,7 +166,7 @@ export default function GamePageView({
                     onClick={handleBackToCategories}
                     className="text-blue-neon hover:text-pink-neon transition-colors"
                   >
-                    Categories
+                    {uiTexts.categoriesLabel}
                   </button>
                   <span className="text-cyber-white/30">/</span>
                   <span className="text-pink-neon font-semibold">{selectedCategory.name}</span>
@@ -154,12 +175,12 @@ export default function GamePageView({
               {!selectedCategory && (
                 <>
                   <span className="text-cyber-white/30">/</span>
-                  <span className="text-pink-neon font-semibold">Categories</span>
+                  <span className="text-pink-neon font-semibold">{uiTexts.categoriesLabel}</span>
                 </>
               )}
             </nav>
             <div className="hidden lg:block w-72 xl:w-96 shrink-0">
-              <ServiceSearch services={initialServices} categories={categories} />
+              <ServiceSearch services={initialServices} categories={categories} placeholder={uiTexts.searchPlaceholder} buyLabel={uiTexts.buyButton} noResultsText={uiTexts.searchNoResults} />
             </div>
           </div>
 
@@ -174,9 +195,9 @@ export default function GamePageView({
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                   </svg>
-                  Back to categories
+                  {uiTexts.backToCategories}
                 </button>
-                <h1 className="text-4xl lg:text-5xl font-bold mb-4">
+                <h1 className="text-2xl sm:text-3xl lg:text-5xl font-bold mb-4 wrap-break-word">
                   <span className="text-cyber-white">{gameTitle}</span>
                   <span className="neon-text ml-3">— {selectedCategory.name}</span>
                 </h1>
@@ -188,12 +209,12 @@ export default function GamePageView({
               </>
             ) : (
               <>
-                <h1 className="text-4xl lg:text-5xl font-bold mb-4">
+                <h1 className="text-2xl sm:text-3xl lg:text-5xl font-bold mb-4 wrap-break-word">
                   <span className="text-cyber-white">{gameTitle}</span>
-                  <span className="neon-text ml-3">Services</span>
+                  <span className="neon-text ml-3">{uiTexts.servicesLabel}</span>
                 </h1>
                 <p className="text-cyber-white/70 text-lg leading-relaxed max-w-3xl">
-                  Select a category to explore our professional boosting services for {gameTitle}.
+                  {uiTexts.selectCategoryHint}
                 </p>
               </>
             )}
@@ -232,7 +253,7 @@ export default function GamePageView({
                     {/* Footer */}
                     <div className="flex items-center justify-between mt-auto pt-4 border-t border-purple-neon/10">
                       <span className="text-sm text-blue-neon">
-                        {serviceCount} {serviceCount === 1 ? 'service' : 'services'}
+                        {serviceCount} {serviceCount === 1 ? uiTexts.serviceSingular : uiTexts.servicePlural}
                       </span>
                       <svg className="w-5 h-5 text-pink-neon opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -250,6 +271,7 @@ export default function GamePageView({
               categories={filteredCategories as any}
               paymentDisclaimer={paymentDisclaimer}
               euroValue={euroValue}
+              uiTexts={uiTexts}
             />
           )}
         </div>

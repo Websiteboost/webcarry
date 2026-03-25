@@ -1,5 +1,6 @@
 import { type ChangeEvent } from 'react';
 import type { Service, ServiceComponent } from '../../../types';
+import type { UiTexts } from '../../../lib/services/ui-texts';
 import IncrementalBar from '../IncrementalBar';
 import CheckGroup from '../CheckGroup';
 import BoxPrice from '../BoxPrice';
@@ -29,6 +30,7 @@ interface Props {
   isComponentSatisfied: (c: ServiceComponent) => boolean;
   formatPrice: (usd: number | string) => string;
   currencySymbol: string;
+  uiTexts?: UiTexts;
 }
 
 function RequiredError() {
@@ -63,6 +65,7 @@ export default function ServiceComponentRenderer({
   isComponentSatisfied,
   formatPrice,
   currencySymbol,
+  uiTexts,
 }: Props) {
   // Groups manage their own error display in the accordion header
   if (component.type === 'group') {
@@ -84,6 +87,7 @@ export default function ServiceComponentRenderer({
             isComponentSatisfied={isComponentSatisfied}
             formatPrice={formatPrice}
             currencySymbol={currencySymbol}
+            uiTexts={uiTexts}
           />
         )}
       />
@@ -106,6 +110,8 @@ export default function ServiceComponentRenderer({
             barPrice={service.barPrice}
             onValueChange={handlers.onBarValueChange}
             title={service.barPrice.label}
+            fromLabel={uiTexts?.barFrom}
+            toLabel={uiTexts?.barTo}
           />
         </div>
       ) : null;
@@ -114,7 +120,12 @@ export default function ServiceComponentRenderer({
     case 'box':
       content = service.boxPrice && service.boxPrice.length > 0 ? (
         <div className="mb-6">
-          <BoxPrice values={service.boxPrice} onSelectionChange={handlers.onBoxPriceChange} formatPrice={formatPrice} discountPercent={discountPercent} />
+          <BoxPrice values={service.boxPrice} onSelectionChange={handlers.onBoxPriceChange} formatPrice={formatPrice} discountPercent={discountPercent}
+            selectAmountLabel={uiTexts?.selectAmount}
+            amountSingular={uiTexts?.amountSingular}
+            amountPlural={uiTexts?.amountPlural}
+            selectedText={uiTexts?.selected}
+          />
         </div>
       ) : null;
       break;
@@ -125,6 +136,7 @@ export default function ServiceComponentRenderer({
           <BoxTitle
             options={component.data.options}
             onSelectionChange={(hasSelection) => handlers.onBoxTitleChange(component.id, hasSelection)}
+            selectedPrefix={uiTexts?.selectedPrefix}
           />
         </div>
       ) : null;
@@ -184,6 +196,7 @@ export default function ServiceComponentRenderer({
                 onSelectionChange={(hasSelection) => handlers.onSelectorSelectionChange(selectorId, hasSelection)}
                 formatPrice={formatPrice}
                 discountPercent={discountPercent}
+                choosePlaceholder={uiTexts?.choosePlaceholder}
               />
             );
           })}
@@ -200,6 +213,9 @@ export default function ServiceComponentRenderer({
             onSelectionChange={handlers.onAdditionalServicesChange}
             formatPrice={formatPrice}
             discountPercent={discountPercent}
+            additionalSingular={uiTexts?.additionalSingular}
+            additionalPlural={uiTexts?.additionalPlural}
+            selectedText={uiTexts?.selected}
           />
         </div>
       ) : null;

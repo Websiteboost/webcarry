@@ -7,9 +7,12 @@ interface Props {
   onSelectionChange: (selectedValues: number[]) => void;
   formatPrice: (usd: number | string) => string;
   discountPercent?: number;
+  additionalSingular?: string;
+  additionalPlural?: string;
+  selectedText?: string;
 }
 
-function CheckGroup({ options, title = 'Additional Services', onSelectionChange, formatPrice, discountPercent = 0 }: Props) {
+function CheckGroup({ options, title = 'Additional Services', onSelectionChange, formatPrice, discountPercent = 0, additionalSingular, additionalPlural, selectedText }: Props) {
   const [selectedOptions, setSelectedOptions] = useState<Set<string>>(new Set());
 
   // Reset selected options when options change (cuando cambia el servicio)
@@ -136,7 +139,7 @@ function CheckGroup({ options, title = 'Additional Services', onSelectionChange,
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
             </svg>
             <span className="text-sm text-cyber-white/70">
-              {selectedOptions.size} additional service{selectedOptions.size > 1 ? 's' : ''} selected
+              {selectedOptions.size} {selectedOptions.size > 1 ? (additionalPlural ?? 'additional services') : (additionalSingular ?? 'additional service')} {selectedText ?? 'selected'}
             </span>
           </div>
         </div>

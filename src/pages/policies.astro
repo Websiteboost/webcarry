@@ -5,10 +5,12 @@ import GlitchLogo from '../components/astro/GlitchLogo.astro';
 import BackgroundLogo from '../components/astro/BackgroundLogo.astro';
 import { getPoliciesContent } from '../lib/services/policies';
 import { getSiteContent } from '../lib/services';
+import { readLocaleCookie } from '../lib/i18n';
 import './_policies.css';
 
-const policies = await getPoliciesContent();
-const siteContent = await getSiteContent();
+const locale = readLocaleCookie(Astro.cookies);
+const policies = await getPoliciesContent(locale);
+const siteContent = await getSiteContent(locale);
 const { home } = siteContent;
 ---
 

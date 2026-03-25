@@ -6,6 +6,7 @@ interface Props {
   categories: Category[];
   currentCategoryId?: string;
   onCategoryChange?: (categoryId: string) => void;
+  categoriesLabel?: string;
 }
 
 const getIcon = (iconName: string) => {
@@ -13,7 +14,7 @@ const getIcon = (iconName: string) => {
   return Icon || Icons.Package;
 };
 
-export default function MobileMenu({ categories, currentCategoryId, onCategoryChange }: Props) {
+export default function MobileMenu({ categories, currentCategoryId, onCategoryChange, categoriesLabel = 'Categories' }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<string[]>(
     currentCategoryId ? [currentCategoryId] : []
@@ -72,7 +73,7 @@ export default function MobileMenu({ categories, currentCategoryId, onCategoryCh
         }`}
       >
         <div className="p-6 pt-20">
-          <h2 className="text-2xl font-bold text-pink-neon mb-6 neon-text">Categories</h2>
+          <h2 className="text-2xl font-bold text-pink-neon mb-6 neon-text">{categoriesLabel}</h2>
           <nav className="space-y-2">
             {categories.map((category) => {
               const isExpanded = expandedCategories.includes(category.id);

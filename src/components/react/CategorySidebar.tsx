@@ -6,6 +6,7 @@ interface Props {
   categories: Category[];
   currentCategoryId?: string;
   onCategoryChange?: (categoryId: string) => void;
+  categoriesLabel?: string;
 }
 
 const getIcon = (iconName: string) => {
@@ -13,7 +14,7 @@ const getIcon = (iconName: string) => {
   return Icon || Icons.Package;
 };
 
-export default function CategorySidebar({ categories, currentCategoryId, onCategoryChange }: Props) {
+export default function CategorySidebar({ categories, currentCategoryId, onCategoryChange, categoriesLabel = 'Categories' }: Props) {
   const [expandedCategories, setExpandedCategories] = useState<string[]>(
     currentCategoryId ? [currentCategoryId] : []
   );
@@ -40,7 +41,7 @@ export default function CategorySidebar({ categories, currentCategoryId, onCateg
 
   return (
     <div className="w-full glass-effect border-r border-purple-neon/20 p-8 flex flex-col" style={{height: 'calc(100vh - 8rem)'}}>
-      <h2 className="text-2xl font-bold text-pink-neon mb-8 neon-text shrink-0">Categories</h2>
+      <h2 className="text-2xl font-bold text-pink-neon mb-8 neon-text shrink-0">{categoriesLabel}</h2>
       <nav className="space-y-2 overflow-y-auto flex-1 pr-2 min-h-0 [&::-webkit-scrollbar]:w-0" style={{ scrollbarWidth: 'none' }}>
         {categories.map((category) => {
           const isExpanded = expandedCategories.includes(category.id);

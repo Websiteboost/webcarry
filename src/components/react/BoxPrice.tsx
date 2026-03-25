@@ -6,9 +6,13 @@ interface Props {
   onSelectionChange: (selectedValues: number[]) => void;
   formatPrice: (usd: number | string) => string;
   discountPercent?: number;
+  selectAmountLabel?: string;
+  amountSingular?: string;
+  amountPlural?: string;
+  selectedText?: string;
 }
 
-function BoxPrice({ values, onSelectionChange, formatPrice, discountPercent = 0 }: Props) {
+function BoxPrice({ values, onSelectionChange, formatPrice, discountPercent = 0, selectAmountLabel, amountSingular, amountPlural, selectedText }: Props) {
   const [selectedIndexes, setSelectedIndexes] = useState<Set<number>>(new Set());
 
   // Reset selected indexes when values change (cuando cambia el servicio)
@@ -50,7 +54,7 @@ function BoxPrice({ values, onSelectionChange, formatPrice, discountPercent = 0 
   return (
     <div className="space-y-3">
       <label className="block text-base font-medium text-cyber-white">
-        Select Amount
+        {selectAmountLabel ?? 'Select Amount'}
       </label>
       
       {/* Grid responsivo que se adapta al contenido */}
@@ -120,7 +124,7 @@ function BoxPrice({ values, onSelectionChange, formatPrice, discountPercent = 0 
                 style={{boxShadow: '0 0 5px rgba(16,185,129,0.8)'}}
               />
               <span className="text-sm text-cyber-white/70">
-                {selectedIndexes.size} amount{selectedIndexes.size > 1 ? 's' : ''} selected
+                {selectedIndexes.size} {selectedIndexes.size > 1 ? (amountPlural ?? 'amounts') : (amountSingular ?? 'amount')} {selectedText ?? 'selected'}
               </span>
             </div>
             <span className="text-base font-bold text-green-neon">
