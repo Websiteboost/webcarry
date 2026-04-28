@@ -37,6 +37,8 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
     selectedRegion: ps.selectedRegion,
     boxtitleSelected: ps.boxtitleSelected,
     appliedDiscount: discount.applied,
+    tabGroupSelected: ps.tabGroupSelected,
+    selectGroupSelected: ps.selectGroupSelected,
   });
 
   if (!service) return null;
@@ -50,6 +52,8 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
     onAdditionalServicesChange: ps.handleAdditionalServicesChange,
     onCustomPriceChange: ps.handleCustomPriceChange,
     onPresetPriceSelect: ps.handlePresetPriceSelect,
+    onTabGroupChange: ps.handleTabGroupChange,
+    onSelectGroupChange: ps.handleSelectGroupChange,
   };
 
   return createPortal(
@@ -141,6 +145,8 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
                 formatPrice={formatPrice}
                 currencySymbol={symbol}
                 uiTexts={uiTexts}
+                tabGroupSelected={ps.tabGroupSelected}
+                selectGroupSelected={ps.selectGroupSelected}
               />
             ))}
 

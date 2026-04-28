@@ -12,6 +12,8 @@ interface PriceState {
   selectedRegion: string;
   boxtitleSelected: Record<string, boolean>;
   appliedDiscount: DiscountCode | null;
+  tabGroupSelected: Record<string, number>;
+  selectGroupSelected: Record<string, number>;
 }
 
 function toNum(v: number | string): number {
@@ -19,9 +21,35 @@ function toNum(v: number | string): number {
   return isNaN(n) ? 0 : n;
 }
 
-function flattenComponents(components: ServiceComponent[]): ServiceComponent[] {
-  return components.flatMap(c =>
-    c.type === 'group' ? flattenComponents(c.children ?? []) : [c]
+function flattenComponents(
+  components: ServiceComponent[],
+  tabGroupSelected: Record<string, number>,
+  selectGroupSelected: Record<string, number>,
+): ServiceComponent[] {
+  return components.flatMap(c => {
+    if (c.type === 'group') {
+      return flattenComponents(c.children ?? [], tabGroupSelected, selectGroupSelected);
+    }
+    if (c.type === 'tab-group') {
+      const activeTab = tabGroupSelected[c.id] ?? 0;
+      const activeChildren = (c.data?.tabs?.[activeTab]?.children ?? []) as ServiceComponent[];
+      return flattenComponents(activeChildren, tabGroupSelected, selectGroupSelected);
+    }
+    if (c.type === 'select-group') {
+      const selectedOpt = selectGroupSelected[c.id] ?? -1;
+      if (selectedOpt < 0) return [];
+      const activeChildren = (c.data?.options?.[selectedOpt]?.children ?? []) as ServiceComponent[];
+      return flattenComponents(activeChildren, tabGroupSelected, selectGroupSelected);
+    }
+    return [c];
+  });
+}
+
+function hasTabOrSelectGroupers(components: ServiceComponent[]): boolean {
+  return components.some(c =>
+    c.type === 'tab-group' ||
+    c.type === 'select-group' ||
+    (c.type === 'group' && hasTabOrSelectGroupers(c.children ?? [])),
   );
 }
 
@@ -42,7 +70,11 @@ function computeDiscount(basePrice: number, discount: DiscountCode | null): numb
 }
 
 export function usePaymentPrice(service: Service | null, state: PriceState) {
-  const { barMinValue, barMaxValue, boxValues, selectorValues, additionalValues, selectedPrice, customPrice, selectedRegion, boxtitleSelected, appliedDiscount } = state;
+  const {
+    barMinValue, barMaxValue, boxValues, selectorValues, additionalValues,
+    selectedPrice, customPrice, selectedRegion, boxtitleSelected, appliedDiscount,
+    tabGroupSelected, selectGroupSelected,
+  } = state;
 
   const calculateBarPrice = useCallback((barPrice: any, minValue: number, maxValue: number): number => {
     if (!barPrice) return 0;
@@ -73,18 +105,22 @@ export function usePaymentPrice(service: Service | null, state: PriceState) {
 
   const getBasePrice = useCallback((): number => {
     let basePrice = 0;
-    const flat = service?.components ? flattenComponents(service.components) : [];
+    const flat = service?.components ? flattenComponents(service.components, tabGroupSelected, selectGroupSelected) : [];
     const discountOf = (type: string) => flat.find(c => c.type === type)?.discount_percent ?? 0;
 
-    if (service?.barPrice && barMinValue !== null && barMaxValue !== null) {
+    // Only filter by active types when tab-group or select-group groupers exist
+    const useActiveFilter = !!(service?.components && hasTabOrSelectGroupers(service.components));
+    const isTypeActive = (type: string) => !useActiveFilter || flat.some(c => c.type === type);
+
+    if (service?.barPrice && barMinValue !== null && barMaxValue !== null && isTypeActive('bar')) {
       basePrice += applyPct(calculateBarPrice(service.barPrice, barMinValue, barMaxValue), discountOf('bar'));
     }
 
-    if (service?.boxPrice && boxValues.length > 0) {
+    if (service?.boxPrice && boxValues.length > 0 && isTypeActive('box')) {
       basePrice += applyPct(boxValues.reduce((sum, v) => sum + toNum(v), 0), discountOf('box'));
     }
 
-    if (service?.customPrice?.enabled) {
+    if (service?.customPrice?.enabled && isTypeActive('custom')) {
       const rawCustom = customPrice ? toNum(customPrice) : (selectedPrice !== null ? toNum(selectedPrice) : 0);
       basePrice += applyPct(rawCustom, discountOf('custom'));
     }
@@ -93,11 +129,16 @@ export function usePaymentPrice(service: Service | null, state: PriceState) {
       basePrice = toNum(service?.price ?? 0);
     }
 
-    basePrice += applyPct(additionalValues.reduce((sum, v) => sum + toNum(v), 0), discountOf('additional'));
-    basePrice += applyPct(Object.values(selectorValues).reduce((sum, v) => sum + toNum(v), 0), discountOf('selectors'));
+    if (isTypeActive('additional')) {
+      basePrice += applyPct(additionalValues.reduce((sum, v) => sum + toNum(v), 0), discountOf('additional'));
+    }
+
+    if (isTypeActive('selectors')) {
+      basePrice += applyPct(Object.values(selectorValues).reduce((sum, v) => sum + toNum(v), 0), discountOf('selectors'));
+    }
 
     return Math.round(basePrice * 100) / 100;
-  }, [service, barMinValue, barMaxValue, boxValues, selectorValues, additionalValues, selectedPrice, customPrice, calculateBarPrice]);
+  }, [service, barMinValue, barMaxValue, boxValues, selectorValues, additionalValues, selectedPrice, customPrice, calculateBarPrice, tabGroupSelected, selectGroupSelected]);
 
   const getFinalPrice = useCallback(
     (): number => computeDiscount(getBasePrice(), appliedDiscount),
@@ -157,15 +198,23 @@ export function usePaymentPrice(service: Service | null, state: PriceState) {
 
     function calcComponent(c: ServiceComponent): number {
       const t = c.estimatedTime ?? 0;
-      // Groups don't carry their own time — they sum their children
       if (c.type === 'group') {
         return (c.children ?? []).reduce((sum, child) => sum + calcComponent(child), 0);
       }
-      // Informational labels never contribute time
+      if (c.type === 'tab-group') {
+        const activeTab = tabGroupSelected[c.id] ?? 0;
+        const activeChildren = (c.data?.tabs?.[activeTab]?.children ?? []) as ServiceComponent[];
+        return activeChildren.reduce((sum, child) => sum + calcComponent(child), 0);
+      }
+      if (c.type === 'select-group') {
+        const selectedOpt = selectGroupSelected[c.id] ?? -1;
+        if (selectedOpt < 0) return 0;
+        const activeChildren = (c.data?.options?.[selectedOpt]?.children ?? []) as ServiceComponent[];
+        return activeChildren.reduce((sum, child) => sum + calcComponent(child), 0);
+      }
       if (c.type === 'labeltitle' || t === 0) return 0;
-      // For interactive components, count time only when user has engaged
       switch (c.type) {
-        case 'bar':        return t; // always active — range always set
+        case 'bar':        return t;
         case 'box':        return boxValues.length > 0 ? t : 0;
         case 'boxtitle':   return boxtitleSelected[c.id] ? t : 0;
         case 'custom':     return (customPrice !== '' || selectedPrice !== null) ? t : 0;
@@ -176,7 +225,7 @@ export function usePaymentPrice(service: Service | null, state: PriceState) {
     }
 
     return service.components.reduce((sum, c) => sum + calcComponent(c), 0);
-  }, [service, boxValues, boxtitleSelected, customPrice, selectedPrice, selectorValues, additionalValues]);
+  }, [service, boxValues, boxtitleSelected, customPrice, selectedPrice, selectorValues, additionalValues, tabGroupSelected, selectGroupSelected]);
 
   return { getBasePrice, getFinalPrice, getDiscountAmount, getPaymentDescription, getEstimatedTime };
 }

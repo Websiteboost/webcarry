@@ -31,6 +31,8 @@ export function usePaymentState(service: Service | null) {
   const [boxtitleSelected, setBoxtitleSelected] = useState<Record<string, boolean>>({});
   const [selectorSelected, setSelectorSelected] = useState<Record<string, boolean>>({});
   const [showValidation, setShowValidation] = useState(false);
+  const [tabGroupSelected, setTabGroupSelected] = useState<Record<string, number>>({});
+  const [selectGroupSelected, setSelectGroupSelected] = useState<Record<string, number>>({});
 
   // Reset all state when service changes
   useEffect(() => {
@@ -49,6 +51,18 @@ export function usePaymentState(service: Service | null) {
     setAcceptedTerms(false);
     setSelectedPaymentMethod(null);
     setShowPayPalButton(false);
+    setTabGroupSelected({});
+
+    // Pre-select first option in every select-group so children render immediately
+    const defaults: Record<string, number> = {};
+    const collectSelectGroups = (components: ServiceComponent[]) => {
+      for (const c of components) {
+        if (c.type === 'select-group') defaults[c.id] = 0;
+        else if (c.type === 'group') collectSelectGroups(c.children ?? []);
+      }
+    };
+    if (service.components) collectSelectGroups(service.components);
+    setSelectGroupSelected(defaults);
   }, [service?.id]);
 
   // --- Handlers ---
@@ -92,12 +106,31 @@ export function usePaymentState(service: Service | null) {
     setCustomPrice('');
   }, []);
 
+  const handleTabGroupChange = useCallback((componentId: string, tabIndex: number) => {
+    setTabGroupSelected(prev => ({ ...prev, [componentId]: tabIndex }));
+  }, []);
+
+  const handleSelectGroupChange = useCallback((componentId: string, optionIndex: number) => {
+    setSelectGroupSelected(prev => ({ ...prev, [componentId]: optionIndex }));
+  }, []);
+
   // --- Validation ---
 
   const isComponentSatisfied = useCallback((component: ServiceComponent): boolean => {
     if (component.type === 'group') {
-      // A group is satisfied when all of its required children are satisfied
       return (component.children ?? []).every(child => isComponentSatisfied(child));
+    }
+    if (component.type === 'tab-group') {
+      const activeTab = tabGroupSelected[component.id] ?? 0;
+      const activeChildren = (component.data?.tabs?.[activeTab]?.children ?? []) as ServiceComponent[];
+      return activeChildren.every(child => !child.required || isComponentSatisfied(child));
+    }
+    if (component.type === 'select-group') {
+      const selectedOpt = selectGroupSelected[component.id] ?? -1;
+      if (component.required && selectedOpt < 0) return false;
+      if (selectedOpt < 0) return true;
+      const activeChildren = (component.data?.options?.[selectedOpt]?.children ?? []) as ServiceComponent[];
+      return activeChildren.every(child => !child.required || isComponentSatisfied(child));
     }
     if (!component.required) return true;
     switch (component.type) {
@@ -117,11 +150,10 @@ export function usePaymentState(service: Service | null) {
       case 'labeltitle': return true;
       default: return true;
     }
-  }, [service, barMinValue, barMaxValue, boxValues, customPrice, selectedPrice, selectorSelected, additionalValues, boxtitleSelected]);
+  }, [service, barMinValue, barMaxValue, boxValues, customPrice, selectedPrice, selectorSelected, additionalValues, boxtitleSelected, tabGroupSelected, selectGroupSelected]);
 
   const areAllRequiredSatisfied = useCallback((): boolean => {
     if (!service?.components) return true;
-    // Recursive check that also traverses group children
     const check = (c: ServiceComponent): boolean => isComponentSatisfied(c);
     return service.components.every(c => check(c));
   }, [service, isComponentSatisfied]);
@@ -170,11 +202,13 @@ export function usePaymentState(service: Service | null) {
     showPayPalButton,
     boxtitleSelected, selectorSelected,
     showValidation,
+    tabGroupSelected, selectGroupSelected,
     isComponentSatisfied, areAllRequiredSatisfied,
     handleBarValueChange, handleAdditionalServicesChange,
     handleBoxPriceChange, handleSelectorChange,
     handleBoxTitleChange, handleSelectorSelectionChange,
     handleCustomPriceChange, handlePresetPriceSelect,
+    handleTabGroupChange, handleSelectGroupChange,
     handlePayment, handlePayPalSuccess, handlePayPalError, handlePayPalCancel,
   };
 }

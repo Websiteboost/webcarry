@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/DevCode/Repositories/Webcarry - CMS/features/**)",
+      "Read(//c/DevCode/Repositories/Webcarry - CMS/db/alters_27042026_tab_select_groupers/**)",
+      "Bash(npx tsc *)",
+      "Read(//c/DevCode/Repositories/Webcarry - CMS/**)"
+    ]
+  }
+}

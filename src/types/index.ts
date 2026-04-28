@@ -95,7 +95,7 @@ export interface DiscountCode {
 
 export interface ServiceComponent {
   id: string;
-  type: 'bar' | 'box' | 'custom' | 'selectors' | 'additional' | 'boxtitle' | 'labeltitle' | 'group';
+  type: 'bar' | 'box' | 'custom' | 'selectors' | 'additional' | 'boxtitle' | 'labeltitle' | 'group' | 'tab-group' | 'select-group';
   order: number;
   required?: boolean;
   /** Estimated time in hours (0 = not applicable) */

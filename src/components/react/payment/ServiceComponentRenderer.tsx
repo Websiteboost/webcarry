@@ -8,6 +8,8 @@ import BoxTitle from '../BoxTitle';
 import TitleService from '../TitleService';
 import CustomSelector from '../CustomSelector';
 import ServiceGroupRenderer from './ServiceGroupRenderer';
+import ServiceTabGroupRenderer from './ServiceTabGroupRenderer';
+import ServiceSelectGroupRenderer from './ServiceSelectGroupRenderer';
 
 export interface ComponentHandlers {
   onBarValueChange: (min: number, max: number) => void;
@@ -18,6 +20,8 @@ export interface ComponentHandlers {
   onAdditionalServicesChange: (values: number[]) => void;
   onCustomPriceChange: (e: ChangeEvent<HTMLInputElement>) => void;
   onPresetPriceSelect: (price: number | string) => void;
+  onTabGroupChange: (componentId: string, tabIndex: number) => void;
+  onSelectGroupChange: (componentId: string, optionIndex: number) => void;
 }
 
 interface Props {
@@ -31,6 +35,8 @@ interface Props {
   formatPrice: (usd: number | string) => string;
   currencySymbol: string;
   uiTexts?: UiTexts;
+  tabGroupSelected?: Record<string, number>;
+  selectGroupSelected?: Record<string, number>;
 }
 
 function RequiredError() {
@@ -66,7 +72,28 @@ export default function ServiceComponentRenderer({
   formatPrice,
   currencySymbol,
   uiTexts,
+  tabGroupSelected,
+  selectGroupSelected,
 }: Props) {
+  // Shared render function passed down to group renderers to avoid circular imports
+  const renderChild = (child: ServiceComponent) => (
+    <ServiceComponentRenderer
+      key={child.id}
+      component={child}
+      service={service}
+      handlers={handlers}
+      selectedPrice={selectedPrice}
+      customPrice={customPrice}
+      showValidation={showValidation}
+      isComponentSatisfied={isComponentSatisfied}
+      formatPrice={formatPrice}
+      currencySymbol={currencySymbol}
+      uiTexts={uiTexts}
+      tabGroupSelected={tabGroupSelected}
+      selectGroupSelected={selectGroupSelected}
+    />
+  );
+
   // Groups manage their own error display in the accordion header
   if (component.type === 'group') {
     const groupHasError = showValidation &&
@@ -75,21 +102,45 @@ export default function ServiceComponentRenderer({
       <ServiceGroupRenderer
         group={component}
         hasValidationError={groupHasError}
-        renderChild={(child) => (
-          <ServiceComponentRenderer
-            key={child.id}
-            component={child}
-            service={service}
-            handlers={handlers}
-            selectedPrice={selectedPrice}
-            customPrice={customPrice}
-            showValidation={showValidation}
-            isComponentSatisfied={isComponentSatisfied}
-            formatPrice={formatPrice}
-            currencySymbol={currencySymbol}
-            uiTexts={uiTexts}
-          />
-        )}
+        renderChild={renderChild}
+      />
+    );
+  }
+
+  if (component.type === 'tab-group') {
+    const activeTabIndex = tabGroupSelected?.[component.id] ?? 0;
+    const tabs = (component.data?.tabs ?? []) as Array<{ title: string; children: ServiceComponent[] }>;
+    const activeChildren = (tabs[activeTabIndex]?.children ?? []) as ServiceComponent[];
+    const tabGroupHasError = showValidation &&
+      activeChildren.some(child => child.required && !isComponentSatisfied(child));
+    return (
+      <ServiceTabGroupRenderer
+        group={component}
+        activeTabIndex={activeTabIndex}
+        onTabChange={(tabIndex) => handlers.onTabGroupChange(component.id, tabIndex)}
+        hasValidationError={tabGroupHasError}
+        renderChild={renderChild}
+      />
+    );
+  }
+
+  if (component.type === 'select-group') {
+    const selectedOptionIndex = selectGroupSelected?.[component.id] ?? -1;
+    const options = (component.data?.options ?? []) as Array<{ title: string; children: ServiceComponent[] }>;
+    const activeChildren = selectedOptionIndex >= 0
+      ? ((options[selectedOptionIndex]?.children ?? []) as ServiceComponent[])
+      : [];
+    const selectGroupHasError = showValidation && (
+      (component.required && selectedOptionIndex < 0) ||
+      (selectedOptionIndex >= 0 && activeChildren.some(child => child.required && !isComponentSatisfied(child)))
+    );
+    return (
+      <ServiceSelectGroupRenderer
+        group={component}
+        selectedOptionIndex={selectedOptionIndex}
+        onOptionChange={(optIndex) => handlers.onSelectGroupChange(component.id, optIndex)}
+        hasValidationError={selectGroupHasError}
+        renderChild={renderChild}
       />
     );
   }

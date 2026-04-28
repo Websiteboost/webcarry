@@ -20,7 +20,7 @@ interface ServiceRow {
 
 interface ServicePriceRow {
   id: string;
-  type: 'bar' | 'box' | 'custom' | 'selectors' | 'additional' | 'boxtitle' | 'labeltitle' | 'group';
+  type: 'bar' | 'box' | 'custom' | 'selectors' | 'additional' | 'boxtitle' | 'labeltitle' | 'group' | 'tab-group' | 'select-group';
   config: any;
   config_es: any;
   display_order: number;
@@ -100,6 +100,48 @@ export async function getServicesByGame(gameId: string, locale: Locale = 'en'): 
   );
   
   return services;
+}
+
+/**
+ * Popula propiedades service-level desde un child config embebido (tab-group / select-group).
+ * Solo sobreescribe si la propiedad aún no fue asignada (primer-encontrado gana).
+ */
+function populateServiceData(
+  service: Service,
+  type: string,
+  config: any,
+): void {
+  switch (type) {
+    case 'bar':
+      if (!service.barPrice) service.barPrice = config as BarPriceConfig;
+      break;
+    case 'box':
+      if (!service.boxPrice && config.options) {
+        service.boxPrice = config.options as BoxPriceItem[];
+      }
+      break;
+    case 'custom':
+      if (!service.customPrice) {
+        service.customPrice = { enabled: true, ...config } as CustomPriceConfig;
+      }
+      break;
+    case 'selectors':
+      if (!service.selectors) service.selectors = config as SelectorConfig;
+      break;
+    case 'additional': {
+      if (!service.additionalServices) {
+        const { title, ...opts } = config;
+        service.additionalServices = opts;
+        service.additionalServicesTitle = title || 'Additional Services';
+      }
+      break;
+    }
+    case 'boxtitle':
+      if (!service.boxTitles && config.options) {
+        service.boxTitles = config.options;
+      }
+      break;
+  }
 }
 
 /**
@@ -203,6 +245,63 @@ async function buildServiceFromRow(row: ServiceRow, locale: Locale = 'en'): Prom
         });
         component.data = resolvedConfig;
         break;
+
+      case 'tab-group': {
+        const rawTabs: any[] = priceRow.config?.tabs ?? [];
+        const esTabs: any[] = priceRow.config_es?.tabs ?? [];
+        const tabs = rawTabs.map((tab: any, tabIdx: number) => {
+          const esTab = esTabs[tabIdx] ?? {};
+          const tabTitle = locale === 'es' && esTab.title ? esTab.title : (tab.title ?? '');
+          const children = (tab.children ?? []).map((child: any, childIdx: number) => {
+            const childConfigEs = esTab.children?.[childIdx]?.config_es ?? null;
+            const resolvedChildConfig = mergeConfigEs(child.type, child.config ?? {}, childConfigEs, locale);
+            populateServiceData(service, child.type, resolvedChildConfig);
+            return {
+              id: `${priceRow.id}-t${tabIdx}-c${childIdx}`,
+              type: child.type,
+              data: resolvedChildConfig,
+              order: child.display_order ?? childIdx,
+              required: child.required ?? false,
+              estimatedTime: child.estimated_time ?? 0,
+              discount_percent: child.discount_percent ?? 0,
+              groupId: priceRow.id,
+            };
+          });
+          return { title: tabTitle, children };
+        });
+        component.data = { tabs };
+        break;
+      }
+
+      case 'select-group': {
+        const rawOptions: any[] = priceRow.config?.options ?? [];
+        const esOptions: any[] = priceRow.config_es?.options ?? [];
+        const label = locale === 'es' && priceRow.config_es?.label
+          ? priceRow.config_es.label
+          : (priceRow.config?.label ?? '');
+        const options = rawOptions.map((opt: any, optIdx: number) => {
+          const esOpt = esOptions[optIdx] ?? {};
+          const optTitle = locale === 'es' && esOpt.title ? esOpt.title : (opt.title ?? '');
+          const children = (opt.children ?? []).map((child: any, childIdx: number) => {
+            const childConfigEs = esOpt.children?.[childIdx]?.config_es ?? null;
+            const resolvedChildConfig = mergeConfigEs(child.type, child.config ?? {}, childConfigEs, locale);
+            populateServiceData(service, child.type, resolvedChildConfig);
+            return {
+              id: `${priceRow.id}-o${optIdx}-c${childIdx}`,
+              type: child.type,
+              data: resolvedChildConfig,
+              order: child.display_order ?? childIdx,
+              required: child.required ?? false,
+              estimatedTime: child.estimated_time ?? 0,
+              discount_percent: child.discount_percent ?? 0,
+              groupId: priceRow.id,
+            };
+          });
+          return { title: optTitle, children };
+        });
+        component.data = { label, options };
+        break;
+      }
     }
 
     componentMap.set(priceRow.id, component);
