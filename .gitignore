@@ -287,4 +287,11 @@ lerna-debug.log*
 ### BUILD ###
 **/build/*
 build/*
-build
+
+
+### CLAUDE ###
+**/claude/*
+.claude/settings.local.json
+**/.claude/settings.local.json
+.claude/settings.json
+**/.claude/settings.json

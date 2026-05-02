@@ -110,7 +110,7 @@ export default function ServiceSearch({ services, categories, placeholder = 'Sea
     <>
       {isOpen && results.length > 0 && (
         <div className="absolute top-full left-0 right-0 mt-2 z-50 max-h-80 overflow-y-auto rounded-xl border border-purple-neon/30 shadow-2xl shadow-purple-neon/10 overflow-hidden"
-          style={{ background: 'rgba(26,11,46,0.97)', backdropFilter: 'blur(16px)' }}>
+          style={{ background: 'rgba(26,11,46,0.97)', WebkitBackdropFilter: 'blur(16px)', backdropFilter: 'blur(16px)' }}>
           {results.map((service, idx) => {
             const catName = categoryMap.get(service.categoryId) ?? '';
             const isActive = idx === activeIndex;
@@ -167,7 +167,7 @@ export default function ServiceSearch({ services, categories, placeholder = 'Sea
       {/* No results */}
       {isOpen && query.trim().length >= 2 && results.length === 0 && (
         <div className="absolute top-full left-0 right-0 mt-2 z-50 rounded-xl border border-purple-neon/20 px-4 py-5 text-center"
-          style={{ background: 'rgba(26,11,46,0.97)', backdropFilter: 'blur(16px)' }}>
+          style={{ background: 'rgba(26,11,46,0.97)', WebkitBackdropFilter: 'blur(16px)', backdropFilter: 'blur(16px)' }}>
           <p className="text-cyber-white/40 text-sm">{noResultsText ?? 'No services match'} <span className="text-cyber-white/70">"{query}"</span></p>
         </div>
       )}
@@ -182,7 +182,7 @@ export default function ServiceSearch({ services, categories, placeholder = 'Sea
         <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border transition-all duration-200 ${
           isOpen ? 'border-purple-neon/60 shadow-[0_0_0_3px_rgba(168,85,247,0.1)]' : 'border-purple-neon/25 hover:border-purple-neon/45'
         }`}
-          style={{ background: 'rgba(26,11,46,0.6)', backdropFilter: 'blur(12px)' }}>
+          style={{ background: 'rgba(26,11,46,0.6)', WebkitBackdropFilter: 'blur(12px)', backdropFilter: 'blur(12px)' }}>
           <svg className="w-4 h-4 text-purple-neon/60 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
@@ -224,7 +224,7 @@ export default function ServiceSearch({ services, categories, placeholder = 'Sea
           </button>
         ) : (
           <div className="relative flex items-center gap-2 px-3 py-2.5 rounded-xl border border-purple-neon/60 shadow-[0_0_0_3px_rgba(168,85,247,0.1)]"
-            style={{ background: 'rgba(26,11,46,0.95)', backdropFilter: 'blur(16px)', minWidth: '200px' }}>
+            style={{ background: 'rgba(26,11,46,0.95)', WebkitBackdropFilter: 'blur(16px)', backdropFilter: 'blur(16px)', minWidth: '200px' }}>
             <svg className="w-4 h-4 text-purple-neon/60 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
