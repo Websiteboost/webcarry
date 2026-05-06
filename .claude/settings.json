@@ -4,7 +4,9 @@
       "Read(//c/DevCode/Repositories/Webcarry - CMS/features/**)",
       "Read(//c/DevCode/Repositories/Webcarry - CMS/db/alters_27042026_tab_select_groupers/**)",
       "Bash(npx tsc *)",
-      "Read(//c/DevCode/Repositories/Webcarry - CMS/**)"
+      "Read(//c/DevCode/Repositories/Webcarry - CMS/**)",
+      "Bash(npm run *)",
+      "PowerShell(cd \"c:\\\\DevCode\\\\Repositories\\\\Webcarry\"; Get-ChildItem -Recurse dist/_astro -File | Sort-Object Length -Descending | Select-Object -First 20 | ForEach-Object { \"{0,8} KB  {1}\" -f [math]::Round\\($_.Length/1KB, 1\\), $_.Name })"
     ]
   }
 }

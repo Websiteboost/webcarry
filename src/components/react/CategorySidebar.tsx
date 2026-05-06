@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import * as Icons from 'lucide-react';
 import type { Category } from '../../types';
+import DynamicIcon from './DynamicIcon';
 
 interface Props {
   categories: Category[];
@@ -8,11 +8,6 @@ interface Props {
   onCategoryChange?: (categoryId: string) => void;
   categoriesLabel?: string;
 }
-
-const getIcon = (iconName: string) => {
-  const Icon = (Icons as any)[iconName];
-  return Icon || Icons.Package;
-};
 
 export default function CategorySidebar({ categories, currentCategoryId, onCategoryChange, categoriesLabel = 'Categories' }: Props) {
   const [expandedCategories, setExpandedCategories] = useState<string[]>(
@@ -59,10 +54,7 @@ export default function CategorySidebar({ categories, currentCategoryId, onCateg
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  {(() => {
-                    const Icon = getIcon(category.icon);
-                    return <Icon className="w-5 h-5" />;
-                  })()}
+                  <DynamicIcon name={category.icon} className="w-5 h-5" />
                   <span className="font-medium">{category.name}</span>
                 </div>
                 <svg

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import * as Icons from 'lucide-react';
 import type { Service, AccordionContent } from '../../types';
+import DynamicIcon from './DynamicIcon';
 import type { UiTexts } from '../../lib/services/ui-texts';
 import CategorySidebar from './CategorySidebar';
 import ServiceGrid from './ServiceGrid';
@@ -28,10 +28,6 @@ interface Props {
   uiTexts: UiTexts;
 }
 
-const getIcon = (iconName: string) => {
-  const Icon = (Icons as any)[iconName];
-  return Icon || Icons.Package;
-};
 
 export default function GamePageView({
   gameId,
@@ -225,7 +221,6 @@ export default function GamePageView({
             /* Category Cards Grid */
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {categories.map((category) => {
-                const Icon = getIcon(category.icon);
                 const serviceCount = category.services?.length ?? 0;
                 return (
                   <button
@@ -235,7 +230,7 @@ export default function GamePageView({
                   >
                     {/* Icon */}
                     <div className="w-14 h-14 rounded-full bg-purple-neon/10 border border-purple-neon/30 flex items-center justify-center group-hover:bg-purple-neon/20 group-hover:border-purple-neon/60 transition-all">
-                      <Icon className="w-7 h-7 text-purple-neon" />
+                      <DynamicIcon name={category.icon} className="w-7 h-7 text-purple-neon" />
                     </div>
 
                     {/* Name */}

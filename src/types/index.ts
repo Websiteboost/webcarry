@@ -3,6 +3,7 @@ export interface Game {
   title: string;
   image: string;
   category: string;
+  display_order?: number;
 }
 
 export interface Category {

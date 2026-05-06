@@ -2,58 +2,66 @@
  * Punto de entrada para todos los servicios de base de datos
  * Exporta todas las funciones de consulta en un solo lugar
  */
-export type { Locale } from '../i18n';
-export { readLocaleCookie } from '../i18n';
+import { readLocaleCookie, type Locale } from '../i18n';
+import { getAllGames, getGameById, getGamesByCategory } from './games';
+import { getAllCategories, getCategoryById, getCategoriesWithServices, getCategoriesWithServicesByGame } from './categories';
+import { getAllServices, getServiceById, getServicesByCategory, getServicesByGame } from './services';
+import { getHomeContent, type HomeContent, type HomeFeature } from './home';
+import { getAccordionContent } from './accordion';
+import { getFooterContent, type Footer, type PaymentMethod } from './footer';
+import { getPaymentConfig, type PaymentConfig } from './payment';
+import { getPoliciesContent, type PoliciesContent, type PolicySection } from './policies';
+import { getUiTexts, type UiTexts } from './ui-texts';
+
+export type { Locale };
+export { readLocaleCookie };
 
 // Games
-export { getAllGames, getGameById, getGamesByCategory } from './games';
+export { getAllGames, getGameById, getGamesByCategory };
 
 // Categories
-export { getAllCategories, getCategoryById, getCategoriesWithServices, getCategoriesWithServicesByGame } from './categories';
+export { getAllCategories, getCategoryById, getCategoriesWithServices, getCategoriesWithServicesByGame };
 
 // Services
-export { 
-  getAllServices, 
-  getServiceById, 
-  getServicesByCategory,
-  getServicesByGame 
-} from './services';
+export { getAllServices, getServiceById, getServicesByCategory, getServicesByGame };
 
 // Home
-export { getHomeContent } from './home';
-export type { HomeContent, HomeFeature } from './home';
+export { getHomeContent };
+export type { HomeContent, HomeFeature };
 
 // Accordion
-export { getAccordionContent } from './accordion';
+export { getAccordionContent };
 
 // Footer
-export { getFooterContent } from './footer';
-export type { Footer, PaymentMethod } from './footer';
+export { getFooterContent };
+export type { Footer, PaymentMethod };
+
 // Payment
-export { getPaymentConfig } from './payment';
-export type { PaymentConfig } from './payment';
+export { getPaymentConfig };
+export type { PaymentConfig };
+
 // Policies
-export { getPoliciesContent } from './policies';
-export type { PoliciesContent, PolicySection } from './policies';
+export { getPoliciesContent };
+export type { PoliciesContent, PolicySection };
 
 // UI Texts
-export { getUiTexts } from './ui-texts';
-export type { UiTexts } from './ui-texts';
+export { getUiTexts };
+export type { UiTexts };
 
 /**
  * Función helper para obtener todo el contenido del sitio de una vez
  * Útil para páginas que necesitan múltiples datos
  */
-export async function getSiteContent(locale: import('../i18n').Locale = 'en') {
+export async function getSiteContent(locale: Locale = 'en') {
   const [home, games, categories, services, accordion, footer] = await Promise.all([
-    import('./home').then(m => m.getHomeContent(locale)),
-    import('./games').then(m => m.getAllGames()),
-    import('./categories').then(m => m.getCategoriesWithServices(locale)),
-    import('./services').then(m => m.getAllServices(locale)),
-    import('./accordion').then(m => m.getAccordionContent(locale)),
-    import('./footer').then(m => m.getFooterContent(locale)),
+    getHomeContent(locale),
+    getAllGames(),
+    getCategoriesWithServices(locale),
+    getAllServices(locale),
+    getAccordionContent(locale),
+    getFooterContent(locale),
   ]);
-  
+
   return {
     home,
     games,

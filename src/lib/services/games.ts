@@ -9,16 +9,17 @@ import type { Game } from '../../types';
  */
 export async function getAllGames(): Promise<Game[]> {
   const rows = await sql`
-    SELECT id, title, category, image, created_at
+    SELECT id, title, category, image, display_order, created_at
     FROM games
-    ORDER BY id ASC
+    ORDER BY display_order ASC, created_at ASC
   `;
-  
+
   return rows.map(row => ({
     id: row.id,
     title: row.title,
     category: row.category,
     image: row.image,
+    display_order: row.display_order,
   }));
 }
 
@@ -49,16 +50,17 @@ export async function getGameById(gameId: string): Promise<Game | null> {
  */
 export async function getGamesByCategory(category: string): Promise<Game[]> {
   const rows = await sql`
-    SELECT id, title, category, image, created_at
+    SELECT id, title, category, image, display_order, created_at
     FROM games
     WHERE category = ${category}
-    ORDER BY id ASC
+    ORDER BY display_order ASC, created_at ASC
   `;
-  
+
   return rows.map(row => ({
     id: row.id,
     title: row.title,
     category: row.category,
     image: row.image,
+    display_order: row.display_order,
   }));
 }

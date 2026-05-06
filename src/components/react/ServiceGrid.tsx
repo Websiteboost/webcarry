@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import type { Service, AccordionContent } from '../../types';
 import type { UiTexts } from '../../lib/services/ui-texts';
-import PaymentSidebar from './PaymentSidebar';
 import { useCurrency } from '../../hooks/useCurrency';
+
+const PaymentSidebar = lazy(() => import('./PaymentSidebar'));
 
 interface CategoryWithServices {
   id: string;
@@ -229,16 +230,18 @@ export default function ServiceGrid({ initialServices, accordionContent, categor
         </div>
       ))}
 
-      {/* Payment Sidebar */}
-      <PaymentSidebar 
-        service={selectedService}
-        isOpen={isPaymentOpen}
-        onClose={handleClosePayment}
-        accordionContent={accordionContent}
-        paymentDisclaimer={paymentDisclaimer}
-        euroValue={euroValue}
-        uiTexts={uiTexts}
-      />
+      {/* Payment Sidebar — lazy loaded, only fetched when first opened */}
+      <Suspense fallback={null}>
+        <PaymentSidebar
+          service={selectedService}
+          isOpen={isPaymentOpen}
+          onClose={handleClosePayment}
+          accordionContent={accordionContent}
+          paymentDisclaimer={paymentDisclaimer}
+          euroValue={euroValue}
+          uiTexts={uiTexts}
+        />
+      </Suspense>
     </div>
   );
 }
