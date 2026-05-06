@@ -14,6 +14,8 @@ interface PriceState {
   appliedDiscount: DiscountCode | null;
   tabGroupSelected: Record<string, number>;
   selectGroupSelected: Record<string, number>;
+  currency?: 'USD' | 'EUR';
+  euroRate?: number;
 }
 
 function toNum(v: number | string): number {
@@ -73,7 +75,7 @@ export function usePaymentPrice(service: Service | null, state: PriceState) {
   const {
     barMinValue, barMaxValue, boxValues, selectorValues, additionalValues,
     selectedPrice, customPrice, selectedRegion, boxtitleSelected, appliedDiscount,
-    tabGroupSelected, selectGroupSelected,
+    tabGroupSelected, selectGroupSelected, currency, euroRate,
   } = state;
 
   const calculateBarPrice = useCallback((barPrice: any, minValue: number, maxValue: number): number => {
@@ -122,11 +124,9 @@ export function usePaymentPrice(service: Service | null, state: PriceState) {
 
     if (service?.customPrice?.enabled && isTypeActive('custom')) {
       const rawCustom = customPrice ? toNum(customPrice) : (selectedPrice !== null ? toNum(selectedPrice) : 0);
-      basePrice += applyPct(rawCustom, discountOf('custom'));
-    }
-
-    if (!service?.barPrice && !service?.boxPrice && !service?.customPrice?.enabled) {
-      basePrice = toNum(service?.price ?? 0);
+      // User typed value in EUR → convert to USD so formatPrice renders it back correctly
+      const customUsd = (currency === 'EUR' && euroRate) ? rawCustom * euroRate : rawCustom;
+      basePrice += applyPct(customUsd, discountOf('custom'));
     }
 
     if (isTypeActive('additional')) {
@@ -138,7 +138,7 @@ export function usePaymentPrice(service: Service | null, state: PriceState) {
     }
 
     return Math.round(basePrice * 100) / 100;
-  }, [service, barMinValue, barMaxValue, boxValues, selectorValues, additionalValues, selectedPrice, customPrice, calculateBarPrice, tabGroupSelected, selectGroupSelected]);
+  }, [service, barMinValue, barMaxValue, boxValues, selectorValues, additionalValues, selectedPrice, customPrice, calculateBarPrice, tabGroupSelected, selectGroupSelected, currency, euroRate]);
 
   const getFinalPrice = useCallback(
     (): number => computeDiscount(getBasePrice(), appliedDiscount),

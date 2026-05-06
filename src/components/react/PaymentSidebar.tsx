@@ -22,7 +22,7 @@ interface Props {
 }
 
 export default function PaymentSidebar({ service, isOpen, onClose, accordionContent, paymentDisclaimer, euroValue = 1.08, uiTexts }: Props) {
-  const { formatPrice, symbol } = useCurrency(euroValue);
+  const { formatPrice, symbol, currency, rate } = useCurrency(euroValue);
   const ps = usePaymentState(service);
   const discount = useDiscount(service?.id ?? undefined);
   const { isVisible, imageError, setImageError, imageLoading, setImageLoading } = useSidebarEffects(isOpen, service?.id);
@@ -39,6 +39,8 @@ export default function PaymentSidebar({ service, isOpen, onClose, accordionCont
     appliedDiscount: discount.applied,
     tabGroupSelected: ps.tabGroupSelected,
     selectGroupSelected: ps.selectGroupSelected,
+    currency,
+    euroRate: rate,
   });
 
   if (!service) return null;
