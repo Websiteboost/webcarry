@@ -195,7 +195,7 @@ export default function GamePageView({
                 </button>
                 <h1 className="text-2xl sm:text-3xl lg:text-5xl font-bold mb-4 wrap-break-word">
                   <span className="text-cyber-white">{gameTitle}</span>
-                  <span className="neon-text ml-3">— {selectedCategory.name}</span>
+                  <span className="neon-text ml-3">· {selectedCategory.name}</span>
                 </h1>
                 {selectedCategory.description && (
                   <p className="text-cyber-white/70 text-lg leading-relaxed max-w-3xl">
