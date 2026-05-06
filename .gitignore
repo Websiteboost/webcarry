@@ -288,6 +288,16 @@ lerna-debug.log*
 **/build/*
 build/*
 
+# Vercel
+.vercel
+
+# Agents / skills internos
+.agents/
+
+# Feature planning (rutas y planes internos)
+features/
+context-iphone-bugs.md
+
 
 ### CLAUDE ###
 **/claude/*
