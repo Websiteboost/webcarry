@@ -123,10 +123,16 @@ export function usePaymentPrice(service: Service | null, state: PriceState) {
     }
 
     if (service?.customPrice?.enabled && isTypeActive('custom')) {
-      const rawCustom = customPrice ? toNum(customPrice) : (selectedPrice !== null ? toNum(selectedPrice) : 0);
-      // User typed value in EUR → convert to USD so formatPrice renders it back correctly
-      const customUsd = (currency === 'EUR' && euroRate) ? rawCustom * euroRate : rawCustom;
-      basePrice += applyPct(customUsd, discountOf('custom'));
+      let rawUsd: number;
+      if (customPrice) {
+        // User typed in display currency → convert to USD
+        const rawTyped = toNum(customPrice);
+        rawUsd = (currency === 'EUR' && euroRate) ? rawTyped * euroRate : rawTyped;
+      } else {
+        // Preset selected → already USD from DB, no conversion needed
+        rawUsd = selectedPrice !== null ? toNum(selectedPrice) : 0;
+      }
+      basePrice += applyPct(rawUsd, discountOf('custom'));
     }
 
     if (isTypeActive('additional')) {
