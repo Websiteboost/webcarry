@@ -1,5 +1,5 @@
 import { type ChangeEvent } from 'react';
-import type { Service, ServiceComponent } from '../../../types';
+import type { Service, ServiceComponent, BoxPriceItem } from '../../../types';
 import type { UiTexts } from '../../../lib/services/ui-texts';
 import IncrementalBar from '../IncrementalBar';
 import CheckGroup from '../CheckGroup';
@@ -168,10 +168,27 @@ export default function ServiceComponentRenderer({
       ) : null;
       break;
 
-    case 'box':
-      content = service.boxPrice && service.boxPrice.length > 0 ? (
+    case 'box': {
+      const boxData = (component.data || {}) as {
+        options?: BoxPriceItem[];
+        showPrice?: boolean;
+        style?: 'box' | 'pill';
+        selection?: 'multiple' | 'single';
+      };
+      const boxValues = boxData.options ?? service.boxPrice ?? [];
+      const boxShowPrice  = boxData.showPrice  !== false;
+      const boxStyle      = boxData.style      ?? 'box';
+      const boxSelection  = boxData.selection  ?? 'multiple';
+      content = boxValues.length > 0 ? (
         <div className="mb-6">
-          <BoxPrice values={service.boxPrice} onSelectionChange={handlers.onBoxPriceChange} formatPrice={formatPrice} discountPercent={discountPercent}
+          <BoxPrice
+            values={boxValues}
+            onSelectionChange={handlers.onBoxPriceChange}
+            formatPrice={formatPrice}
+            discountPercent={discountPercent}
+            showPrice={boxShowPrice}
+            style={boxStyle}
+            selection={boxSelection}
             selectAmountLabel={uiTexts?.selectAmount}
             amountSingular={uiTexts?.amountSingular}
             amountPlural={uiTexts?.amountPlural}
@@ -180,6 +197,7 @@ export default function ServiceComponentRenderer({
         </div>
       ) : null;
       break;
+    }
 
     case 'boxtitle':
       content = component.data?.options?.length > 0 ? (
