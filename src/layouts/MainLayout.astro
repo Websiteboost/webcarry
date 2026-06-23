@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import SupportWidget from '../components/react/support/SupportWidget';
 
 interface Props {
   title?: string;
@@ -32,5 +33,6 @@ const {
 </head>
 <body>
   <slot />
+  <SupportWidget client:load />
 </body>
 </html>
