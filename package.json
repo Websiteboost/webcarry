@@ -20,7 +20,7 @@
     "lucide-react": "^1.21.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "suportum-chat": "^0.1.4",
+    "suportum-chat": "^0.1.7",
     "tailwindcss": "^4.3.1",
     "typescript": "^6.0.3"
   },

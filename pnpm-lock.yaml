@@ -42,8 +42,8 @@ importers:
         specifier: ^19.2.7
         version: 19.2.7(react@19.2.7)
       suportum-chat:
-        specifier: ^0.1.4
-        version: 0.1.4(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        specifier: ^0.1.7
+        version: 0.1.7(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       tailwindcss:
         specifier: ^4.3.1
         version: 4.3.1
@@ -1990,8 +1990,8 @@ packages:
     resolution: {integrity: sha512-BrpvfNAE3dcvq7ll3xVumzjKjZQ5tI1sEUIKr3Uoks0XUl45St3FlatVqef9prk4jRDzhW6WZg+3bk93y6pLjA==}
     engines: {node: '>=6'}
 
-  suportum-chat@0.1.4:
-    resolution: {integrity: sha512-a+zAHpnmY5SnynTk9mNMDo+P7cC4iqjtU+FEPpwFz+hYD/97gi0GrDaqpci1IUQzDQUZ+PX6gLqKQ7wh9p/s/w==}
+  suportum-chat@0.1.7:
+    resolution: {integrity: sha512-PxSINtk03anHqnXO1vDjZ18iKx7SdOdj5mz9CWy6DBTB52MyaR71yerSCopoUP8D9T8uy1Kgv9qAhYeH6CbrMA==}
     peerDependencies:
       react: '*'
       react-dom: '*'
@@ -4389,7 +4389,7 @@ snapshots:
 
   strip-final-newline@2.0.0: {}
 
-  suportum-chat@0.1.4(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7):
+  suportum-chat@0.1.7(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7):
     dependencies:
       lucide-react: 1.21.0(react@19.2.7)
       react: 19.2.7
